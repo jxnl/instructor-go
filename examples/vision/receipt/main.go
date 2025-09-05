@@ -109,7 +109,9 @@ func main() {
 			fmt.Printf("Error: %v\n", err)
 			continue
 		}
-		fmt.Println("\n--------------------------------\n")
+		fmt.Println()
+		fmt.Println("--------------------------------")
+		fmt.Println()
 	}
 	/*
 	   Receipt:

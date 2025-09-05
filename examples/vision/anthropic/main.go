@@ -54,11 +54,11 @@ func main() {
 			{
 				Role: anthropic.RoleUser,
 				Content: []anthropic.MessageContent{
-					anthropic.NewImageMessageContent(anthropic.MessageContentImageSource{
-						Type:      "base64",
-						MediaType: "image/jpeg",
-						Data:      data,
-					}),
+					anthropic.NewImageMessageContent(anthropic.NewMessageContentSource(
+						anthropic.MessagesContentSourceTypeBase64,
+						"image/jpeg",
+						data,
+					)),
 					anthropic.NewTextMessageContent("Extract the movie catalog from the screenshot"),
 				},
 			},
