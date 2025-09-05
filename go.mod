@@ -1,8 +1,6 @@
 module github.com/instructor-ai/instructor-go
 
-go 1.23.0
-
-toolchain go1.24.6
+go 1.23
 
 require (
 	github.com/cohere-ai/cohere-go/v2 v2.15.2
