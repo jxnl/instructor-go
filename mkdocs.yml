@@ -99,7 +99,7 @@ markdown_extensions:
   - pymdownx.magiclink:
       normalize_issue_symbols: true
       repo_url_shorthand: true
-      user: instructor-ai
+      user: 567-labs
       repo: instructor-go
   - pymdownx.mark
   - pymdownx.smartsymbols
