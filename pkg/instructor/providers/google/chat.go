@@ -26,6 +26,26 @@ func (i *InstructorGoogle) CreateChatCompletion(
 	return response, nil
 }
 
+// CreateChatCompletionUnion handles chat completion with union type extraction
+func (i *InstructorGoogle) CreateChatCompletionUnion(
+	ctx context.Context,
+	request GoogleRequest,
+	opts core.UnionOptions,
+) (result any, response GoogleResponse, err error) {
+
+	result, resp, err := core.ChatHandlerUnion(i, ctx, request, opts)
+	if err != nil {
+		if resp == nil {
+			return nil, GoogleResponse{}, err
+		}
+		return nil, *nilGoogleRespWithUsage(resp.(*GoogleResponse)), err
+	}
+
+	response = *(resp.(*GoogleResponse))
+
+	return result, response, nil
+}
+
 func (i *InstructorGoogle) InternalChat(ctx context.Context, request interface{}, schema *core.Schema) (string, interface{}, error) {
 	req, ok := request.(GoogleRequest)
 	if !ok {
@@ -82,6 +102,32 @@ func (i *InstructorGoogle) chatToolCall(ctx context.Context, request *GoogleRequ
 		if err != nil {
 			return "", nilGoogleRespWithUsage(googleResp), err
 		}
+
+		// For union types with multiple functions, inject the function name as discriminator
+		funcName := toolCalls[0].Name
+		if len(schema.Functions) > 1 {
+			var argMap map[string]any
+			if err := json.Unmarshal(argsJSON, &argMap); err == nil {
+				// Check if discriminator already exists
+				hasDiscriminator := false
+				for _, v := range argMap {
+					if str, ok := v.(string); ok && str == funcName {
+						hasDiscriminator = true
+						break
+					}
+				}
+
+				// If no discriminator found, inject it as "type" field
+				if !hasDiscriminator {
+					argMap["type"] = funcName
+					modifiedArgs, err := json.Marshal(argMap)
+					if err == nil {
+						argsJSON = modifiedArgs
+					}
+				}
+			}
+		}
+
 		return string(argsJSON), googleResp, nil
 	}
 	jsonArray := make([]map[string]interface{}, len(toolCalls))

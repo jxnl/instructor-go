@@ -1403,3 +1403,75 @@ func main() {
 ```
 
 </details>
+
+<details>
+<summary>Union Types - Basic Usage</summary>
+
+Union types allow the LLM to choose between multiple structured response types, perfect for handling different notification types.
+
+Running
+
+```bash
+export OPENAI_API_KEY=<Your OpenAI API Key>
+go run examples/union/main.go
+```
+
+See the full example at [`examples/union/main.go`](union/main.go)
+
+Output:
+```
+Example 1: Extracting email notification
+------------------------------------------------------------
+Result type: EmailNotification
+Email notification:
+  To: john@example.com
+  Subject: Meeting Tomorrow
+  Body: Don't forget our meeting at 2pm
+Tokens: 145
+```
+
+</details>
+
+<details>
+<summary>Agent Pattern with Union Types</summary>
+
+Build agents that can select and execute different tools using union types. This example shows an agent that can search, lookup, and finish tasks.
+
+Running
+
+```bash
+export OPENAI_API_KEY=<Your OpenAI API Key>
+go run examples/agent/main.go
+```
+
+See the full example at [`examples/agent/main.go`](agent/main.go)
+
+Output:
+```
+Goal: Search for information about Go programming language, then lookup details about interfaces, and provide a summary.
+================================================================================
+
+--- Turn 1 ---
+Tokens used: 234 (input: 187, output: 47)
+Tool: search("Go programming language")
+Result: Search results for: Go programming language
+- Result 1: Go is a programming language
+- Result 2: Go has excellent concurrency support
+
+--- Turn 2 ---
+Tokens used: 321 (input: 298, output: 23)
+Tool: lookup("interfaces")
+Result: Details for 'interfaces':
+Go's interface system allows for flexible and composable designs. Interfaces define behavior contracts that types can implement.
+
+--- Turn 3 ---
+Tokens used: 398 (input: 365, output: 33)
+Tool: finish
+Final Answer: Go is a modern programming language with strong concurrency support and a flexible interface system that enables composable design patterns.
+================================================================================
+
+Final Answer:
+Go is a modern programming language with strong concurrency support and a flexible interface system that enables composable design patterns.
+```
+
+</details>

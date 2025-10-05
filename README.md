@@ -99,6 +99,123 @@ Age:  %d
 
 See all examples here [`examples/README.md`](examples/README.md)
 
+## Union Types
+
+Union types allow LLMs to choose between multiple structured response types, making it easy to build agents that can select from a set of tools or actions. This is essential for creating flexible AI systems.
+
+### Basic Usage
+
+Define your variant types with a discriminator field:
+
+```go
+type EmailNotification struct {
+    Type    string `json:"type" jsonschema:"const=email"`
+    To      string `json:"to" jsonschema:"description=Email address"`
+    Subject string `json:"subject" jsonschema:"description=Email subject"`
+    Body    string `json:"body" jsonschema:"description=Email body"`
+}
+
+type SMSNotification struct {
+    Type    string `json:"type" jsonschema:"const=sms"`
+    Phone   string `json:"phone" jsonschema:"description=Phone number"`
+    Message string `json:"message" jsonschema:"description=SMS message"`
+}
+
+type PushNotification struct {
+    Type  string `json:"type" jsonschema:"const=push"`
+    Title string `json:"title" jsonschema:"description=Notification title"`
+    Body  string `json:"body" jsonschema:"description=Notification body"`
+}
+```
+
+Use `CreateChatCompletionUnion` to let the LLM choose:
+
+```go
+result, resp, err := client.CreateChatCompletionUnion(
+    ctx,
+    openai.ChatCompletionRequest{
+        Model: openai.GPT4oMini,
+        Messages: []openai.ChatCompletionMessage{
+            {
+                Role:    openai.ChatMessageRoleUser,
+                Content: "Send an email to john@example.com with subject 'Meeting Tomorrow'",
+            },
+        },
+    },
+    instructor.UnionOptions{
+        Discriminator: "type",
+        Variants:      []any{EmailNotification{}, SMSNotification{}, PushNotification{}},
+    },
+)
+
+// Type switch on the result
+switch notification := result.(type) {
+case EmailNotification:
+    fmt.Printf("Email to: %s\n", notification.To)
+case SMSNotification:
+    fmt.Printf("SMS to: %s\n", notification.Phone)
+case PushNotification:
+    fmt.Printf("Push: %s\n", notification.Title)
+}
+```
+
+### Agent Pattern
+
+Union types are perfect for building agents that choose actions:
+
+```go
+type SearchTool struct {
+    Type  string `json:"type" jsonschema:"const=search"`
+    Query string `json:"query" jsonschema:"description=Search query"`
+}
+
+type LookupTool struct {
+    Type    string `json:"type" jsonschema:"const=lookup"`
+    Keyword string `json:"keyword" jsonschema:"description=Keyword to lookup"`
+}
+
+type FinishTool struct {
+    Type   string `json:"type" jsonschema:"const=finish"`
+    Answer string `json:"answer" jsonschema:"description=Final answer"`
+}
+
+// Agent loop
+for turn := 0; turn < maxTurns; turn++ {
+    action, resp, err := client.CreateChatCompletionUnion(
+        ctx,
+        openai.ChatCompletionRequest{
+            Model:    openai.GPT4oMini,
+            Messages: messages,
+        },
+        instructor.UnionOptions{
+            Discriminator: "type",
+            Variants:      []any{SearchTool{}, LookupTool{}, FinishTool{}},
+        },
+    )
+
+    switch tool := action.(type) {
+    case SearchTool:
+        result := executeSearch(tool.Query)
+        messages = append(messages, resultMessage(result))
+    case LookupTool:
+        result := executeLookup(tool.Keyword)
+        messages = append(messages, resultMessage(result))
+    case FinishTool:
+        return tool.Answer, nil
+    }
+}
+```
+
+See the complete agent example: [`examples/agent/main.go`](examples/agent/main.go)
+
+### Key Features
+
+- **Discriminator Field**: Each variant must have a discriminator field (typically `type`) with a unique `const` value
+- **Type Safety**: Results are returned as concrete types for type-safe switching
+- **Validation**: Automatic validation of discriminator uniqueness and field presence
+- **Retry Logic**: Built-in retry handling for invalid discriminator values
+- **Multiple Modes**: Works with all instructor modes (ToolCall, JSON, etc.)
+
 ## Providers
 
 Instructor Go supports the following LLM provider APIs:
