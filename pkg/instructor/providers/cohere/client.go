@@ -1,8 +1,8 @@
 package cohere
 
 import (
+	"github.com/567-labs/instructor-go/pkg/instructor/core"
 	cohere "github.com/cohere-ai/cohere-go/v2/client"
-	"github.com/instructor-ai/instructor-go/pkg/instructor/core"
 )
 
 type InstructorCohere struct {

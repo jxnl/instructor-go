@@ -7,7 +7,7 @@ Instructor Go is a library that makes it a breeze to work with structured output
 [![Twitter Follow](https://img.shields.io/twitter/follow/jxnlco?style=social)](https://twitter.com/jxnlco)
 [![LinkedIn Follow](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/robby-horvath/)
 [![Documentation](https://img.shields.io/badge/docs-available-brightgreen)](https://go.useinstructor.com)
-[![GitHub issues](https://img.shields.io/github/issues/instructor-ai/instructor-go.svg)](https://github.com/instructor-ai/instructor-go/issues)
+[![GitHub issues](https://img.shields.io/github/issues/567-labs/instructor-go.svg)](https://github.com/567-labs/instructor-go/issues)
 [![Discord](https://img.shields.io/discord/1192334452110659664?label=discord)](https://discord.gg/UD9GPjbs8c)
 
 Built on top of [`invopop/jsonschema`](https://github.com/invopop/jsonschema) and utilizing `jsonschema` Go struct tags (so no changing code logic), it provides a simple and user-friendly API to manage validation, retries, and streaming responses. Get ready to supercharge your LLM workflows!
@@ -17,15 +17,15 @@ Built on top of [`invopop/jsonschema`](https://github.com/invopop/jsonschema) an
 Install the package into your code with:
 
 ```bash
-go get "github.com/instructor-ai/instructor-go/pkg/instructor"
+go get "github.com/567-labs/instructor-go/pkg/instructor"
 ```
 
 Import in your code:
 
 ```go
 import (
-	"github.com/instructor-ai/instructor-go/pkg/instructor"
-	instructor_openai "github.com/instructor-ai/instructor-go/pkg/instructor/providers/openai"
+	"github.com/567-labs/instructor-go/pkg/instructor"
+	instructor_openai "github.com/567-labs/instructor-go/pkg/instructor/providers/openai"
 	"github.com/sashabaranov/go-openai"
 )
 ```
@@ -51,9 +51,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/instructor-ai/instructor-go/pkg/instructor"
-	"github.com/instructor-ai/instructor-go/pkg/instructor/core"
-	instructor_openai "github.com/instructor-ai/instructor-go/pkg/instructor/providers/openai"
+	"github.com/567-labs/instructor-go/pkg/instructor"
+	"github.com/567-labs/instructor-go/pkg/instructor/core"
+	instructor_openai "github.com/567-labs/instructor-go/pkg/instructor/providers/openai"
 	"github.com/sashabaranov/go-openai"
 )
 
@@ -226,8 +226,8 @@ Instructor Go provides a unified conversation history API that works across all 
 
 ```go
 import (
-    "github.com/instructor-ai/instructor-go/pkg/instructor/core"
-    instructor_openai "github.com/instructor-ai/instructor-go/pkg/instructor/providers/openai"
+    "github.com/567-labs/instructor-go/pkg/instructor/core"
+    instructor_openai "github.com/567-labs/instructor-go/pkg/instructor/providers/openai"
     "github.com/sashabaranov/go-openai"
 )
 
@@ -287,10 +287,10 @@ The same conversation can be used across different providers using a consistent 
 
 ```go
 import (
-    instructor_openai "github.com/instructor-ai/instructor-go/pkg/instructor/providers/openai"
-    instructor_anthropic "github.com/instructor-ai/instructor-go/pkg/instructor/providers/anthropic"
-    instructor_google "github.com/instructor-ai/instructor-go/pkg/instructor/providers/google"
-    instructor_cohere "github.com/instructor-ai/instructor-go/pkg/instructor/providers/cohere"
+    instructor_openai "github.com/567-labs/instructor-go/pkg/instructor/providers/openai"
+    instructor_anthropic "github.com/567-labs/instructor-go/pkg/instructor/providers/anthropic"
+    instructor_google "github.com/567-labs/instructor-go/pkg/instructor/providers/google"
+    instructor_cohere "github.com/567-labs/instructor-go/pkg/instructor/providers/cohere"
 )
 
 // OpenAI

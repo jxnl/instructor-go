@@ -11,7 +11,7 @@ Instead of manually managing provider-specific message arrays, you can use the `
 ### Creating a Conversation
 
 ```go
-import "github.com/instructor-ai/instructor-go/pkg/instructor/core"
+import "github.com/567-labs/instructor-go/pkg/instructor/core"
 
 // With a system prompt
 conversation := core.NewConversation("You are a helpful assistant")
@@ -61,7 +61,7 @@ conversation.ClearKeepingSystem()
 
 ```go
 import (
-    instructor_openai "github.com/instructor-ai/instructor-go/pkg/instructor/providers/openai"
+    instructor_openai "github.com/567-labs/instructor-go/pkg/instructor/providers/openai"
     "github.com/sashabaranov/go-openai"
 )
 
@@ -83,7 +83,7 @@ resp, err := client.CreateChatCompletion(
 
 ```go
 import (
-    instructor_anthropic "github.com/instructor-ai/instructor-go/pkg/instructor/providers/anthropic"
+    instructor_anthropic "github.com/567-labs/instructor-go/pkg/instructor/providers/anthropic"
     "github.com/liushuangls/go-anthropic/v2"
 )
 
@@ -105,7 +105,7 @@ resp, err := client.CreateMessages(ctx, req, &response)
 ### Google (Gemini)
 
 ```go
-import instructor_google "github.com/instructor-ai/instructor-go/pkg/instructor/providers/google"
+import instructor_google "github.com/567-labs/instructor-go/pkg/instructor/providers/google"
 
 // Convert conversation to Google contents
 contents := instructor_google.ConversationToContents(conversation)
@@ -125,7 +125,7 @@ resp, err := client.CreateChatCompletion(
 
 ```go
 import (
-    instructor_cohere "github.com/instructor-ai/instructor-go/pkg/instructor/providers/cohere"
+    instructor_cohere "github.com/567-labs/instructor-go/pkg/instructor/providers/cohere"
     "github.com/cohere-ai/cohere-go/v2"
 )
 

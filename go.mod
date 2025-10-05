@@ -1,4 +1,4 @@
-module github.com/instructor-ai/instructor-go
+module github.com/567-labs/instructor-go
 
 go 1.23.0
 

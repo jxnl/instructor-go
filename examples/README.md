@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/instructor-ai/instructor-go/pkg/instructor"
+	"github.com/567-labs/instructor-go/pkg/instructor"
 	openai "github.com/sashabaranov/go-openai"
 )
 
@@ -105,7 +105,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/instructor-ai/instructor-go/pkg/instructor"
+	"github.com/567-labs/instructor-go/pkg/instructor"
 	anthropic "github.com/liushuangls/go-anthropic/v2"
 )
 
@@ -190,7 +190,7 @@ func assert(condition bool, message string) {
 <details>
 <summary>Images with OpenAI</summary>
 
-![List of books](https://raw.githubusercontent.com/instructor-ai/instructor-go/main/examples/vision/openai/books.png)
+![List of books](https://raw.githubusercontent.com/567-labs/instructor-go/main/examples/vision/openai/books.png)
 
 Running
 
@@ -207,7 +207,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/instructor-ai/instructor-go/pkg/instructor"
+	"github.com/567-labs/instructor-go/pkg/instructor"
 	openai "github.com/sashabaranov/go-openai"
 )
 
@@ -238,7 +238,7 @@ func main() {
 		instructor.WithMaxRetries(3),
 	)
 
-	url := "https://raw.githubusercontent.com/instructor-ai/instructor-go/main/examples/vision/openai/books.png"
+	url := "https://raw.githubusercontent.com/567-labs/instructor-go/main/examples/vision/openai/books.png"
 
 	var bookCatalog BookCatalog
 	_, err := client.CreateChatCompletion(ctx, openai.ChatCompletionRequest{
@@ -326,7 +326,7 @@ func main() {
 <details>
 <summary>Images with Anthropic</summary>
 
-![List of movies](https://raw.githubusercontent.com/instructor-ai/instructor-go/main/examples/vision/anthropic/movies.png)
+![List of movies](https://raw.githubusercontent.com/567-labs/instructor-go/main/examples/vision/anthropic/movies.png)
 
 Running
 
@@ -346,7 +346,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/instructor-ai/instructor-go/pkg/instructor"
+	"github.com/567-labs/instructor-go/pkg/instructor"
 	"github.com/liushuangls/go-anthropic/v2"
 )
 
@@ -379,7 +379,7 @@ func main() {
 		instructor.WithMaxRetries(3),
 	)
 
-	url := "https://raw.githubusercontent.com/instructor-ai/instructor-go/main/examples/vision/anthropic/movies.jpg"
+	url := "https://raw.githubusercontent.com/567-labs/instructor-go/main/examples/vision/anthropic/movies.jpg"
 	data, err := urlToBase64(url)
 	if err != nil {
 		panic(err)
@@ -509,7 +509,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/instructor-ai/instructor-go/pkg/instructor"
+	"github.com/567-labs/instructor-go/pkg/instructor"
 	openai "github.com/sashabaranov/go-openai"
 )
 
@@ -656,7 +656,7 @@ import (
 
 	cohere "github.com/cohere-ai/cohere-go/v2"
 	cohereclient "github.com/cohere-ai/cohere-go/v2/client"
-	"github.com/instructor-ai/instructor-go/pkg/instructor"
+	"github.com/567-labs/instructor-go/pkg/instructor"
 )
 
 type Section struct {
@@ -812,7 +812,7 @@ import (
 
 	cohere "github.com/cohere-ai/cohere-go/v2"
 	cohereclient "github.com/cohere-ai/cohere-go/v2/client"
-	"github.com/instructor-ai/instructor-go/pkg/instructor"
+	"github.com/567-labs/instructor-go/pkg/instructor"
 )
 
 type HistoricalFact struct {
@@ -898,7 +898,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/instructor-ai/instructor-go/pkg/instructor"
+	"github.com/567-labs/instructor-go/pkg/instructor"
 	openai "github.com/sashabaranov/go-openai"
 )
 
@@ -969,8 +969,8 @@ func main() {
 <summary>Receipt Item Extraction from Image (using OpenAI GPT-4o)</summary>
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/instructor-ai/instructor-go/main/examples/vision/receipt/supermarket-receipt-template.jpg" alt="Receipt 1" width="45%">
-  <img src="https://raw.githubusercontent.com/instructor-ai/instructor-go/main/examples/vision/receipt/receipt-ocr-original.jpg" alt="Receipt 2" width="45%">
+  <img src="https://raw.githubusercontent.com/567-labs/instructor-go/main/examples/vision/receipt/supermarket-receipt-template.jpg" alt="Receipt 1" width="45%">
+  <img src="https://raw.githubusercontent.com/567-labs/instructor-go/main/examples/vision/receipt/receipt-ocr-original.jpg" alt="Receipt 2" width="45%">
 </p>
 
 Running
@@ -988,7 +988,7 @@ import (
 	"math"
 	"os"
 
-	"github.com/instructor-ai/instructor-go/pkg/instructor"
+	"github.com/567-labs/instructor-go/pkg/instructor"
 	openai "github.com/sashabaranov/go-openai"
 )
 
@@ -1163,7 +1163,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/instructor-ai/instructor-go/pkg/instructor"
+	"github.com/567-labs/instructor-go/pkg/instructor"
 	openai "github.com/sashabaranov/go-openai"
 )
 
@@ -1326,7 +1326,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/instructor-ai/instructor-go/pkg/instructor"
+	"github.com/567-labs/instructor-go/pkg/instructor"
 	"google.golang.org/genai"
 )
 

@@ -9,7 +9,7 @@ import (
 	cohere "github.com/cohere-ai/cohere-go/v2"
 	option "github.com/cohere-ai/cohere-go/v2/option"
 
-	"github.com/instructor-ai/instructor-go/pkg/instructor/core"
+	"github.com/567-labs/instructor-go/pkg/instructor/core"
 )
 
 // ChatStream provides the public API that matches the original signature
