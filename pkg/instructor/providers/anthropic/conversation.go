@@ -104,11 +104,8 @@ func FromAnthropicMessages(system string, messages []anthropic.Message) []core.M
 	return result
 }
 
-// ConversationToRequest is a convenience method to populate an Anthropic request with conversation messages
-func ConversationToRequest(conv *core.Conversation, req *anthropic.MessagesRequest) {
-	system, messages := ToAnthropicMessages(conv.GetMessages())
-	if system != "" {
-		req.System = system
-	}
-	req.Messages = messages
+// ConversationToMessages is a convenience method to convert a Conversation to Anthropic messages
+// Returns the system prompt and messages array that can be used to populate a MessagesRequest
+func ConversationToMessages(conv *core.Conversation) (system string, messages []anthropic.Message) {
+	return ToAnthropicMessages(conv.GetMessages())
 }

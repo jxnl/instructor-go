@@ -16,8 +16,8 @@ import "github.com/instructor-ai/instructor-go/pkg/instructor/core"
 // With a system prompt
 conversation := core.NewConversation("You are a helpful assistant")
 
-// Without a system prompt
-conversation := core.NewConversation("")
+// Without a system prompt (variadic - simply omit the argument)
+conversation := core.NewConversation()
 ```
 
 ### Adding Messages
@@ -87,14 +87,16 @@ import (
     anthropicLib "github.com/liushuangls/go-anthropic/v2"
 )
 
+// Convert conversation to Anthropic format (returns system prompt and messages)
+system, messages := anthropic.ConversationToMessages(conversation)
+
 // Create request
 req := anthropicLib.MessagesRequest{
     Model:     anthropicLib.ModelClaude3Sonnet20240229,
     MaxTokens: 1024,
+    System:    system,
+    Messages:  messages,
 }
-
-// Populate with conversation
-anthropic.ConversationToRequest(conversation, &req)
 
 // Use in request
 resp, err := client.CreateMessages(ctx, req, &response)
@@ -127,14 +129,18 @@ import (
     cohereLib "github.com/cohere-ai/cohere-go/v2"
 )
 
+// Convert conversation to Cohere format (returns preamble and chat history)
+preamble, chatHistory := cohere.ConversationToMessages(conversation)
+
 // Create request
 req := &cohereLib.ChatRequest{
-    Model:   "command-r-plus",
-    Message: "Latest user message goes here",
+    Model:       "command-r-plus",
+    Message:     "Latest user message goes here",
+    ChatHistory: chatHistory,
 }
-
-// Populate with conversation history
-cohere.ConversationToRequest(conversation, &req)
+if preamble != "" {
+    req.Preamble = &preamble
+}
 
 // Use in request
 resp, err := client.Chat(ctx, req, &response)
@@ -265,8 +271,8 @@ conversation.AddUserMessage("Next question")
 
 | Method | Description |
 |--------|-------------|
-| `NewConversation(systemPrompt string) *Conversation` | Create a new conversation with optional system prompt |
-| `NewConversationForProvider(provider Provider, systemPrompt string) *Conversation` | Create a conversation for a specific provider |
+| `NewConversation(systemPrompt ...string) *Conversation` | Create a new conversation with optional system prompt (variadic) |
+| `NewConversationForProvider(provider Provider, systemPrompt ...string) *Conversation` | Create a conversation for a specific provider |
 | `AddMessage(role Role, content string) *Conversation` | Add a message with specified role (chainable) |
 | `AddUserMessage(content string) *Conversation` | Add a user message (chainable) |
 | `AddAssistantMessage(content string) *Conversation` | Add an assistant message (chainable) |

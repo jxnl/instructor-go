@@ -281,22 +281,30 @@ messages := openai.ConversationToMessages(conversation)
 
 ### Multi-Provider Support
 
-The same conversation can be used across different providers:
+The same conversation can be used across different providers using a consistent functional API:
 
 ```go
 // OpenAI
 messages := openai.ConversationToMessages(conversation)
 
-// Anthropic
-req := anthropic.MessagesRequest{...}
-anthropic.ConversationToRequest(conversation, &req)
+// Anthropic - returns system prompt and messages
+system, messages := anthropic.ConversationToMessages(conversation)
+req := anthropic.MessagesRequest{
+    Model:    anthropic.ModelClaude3Haiku20240307,
+    System:   system,
+    Messages: messages,
+}
 
 // Google
 contents := google.ConversationToContents(conversation)
 
-// Cohere
-req := cohere.ChatRequest{...}
-cohere.ConversationToRequest(conversation, &req)
+// Cohere - returns preamble and chat history
+preamble, chatHistory := cohere.ConversationToMessages(conversation)
+req := cohere.ChatRequest{
+    Model:       "command-r-plus",
+    Preamble:    &preamble,
+    ChatHistory: chatHistory,
+}
 ```
 
 ### Conversation Management

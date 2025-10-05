@@ -93,27 +93,26 @@ func TestFromAnthropicMessages(t *testing.T) {
 	}
 }
 
-func TestConversationToRequest(t *testing.T) {
+func TestConversationToMessages(t *testing.T) {
 	conv := core.NewConversation("You are helpful")
 	conv.AddUserMessage("Hello")
 	conv.AddAssistantMessage("Hi!")
 
-	req := &anthropic.MessagesRequest{}
-	ConversationToRequest(conv, req)
+	system, messages := ConversationToMessages(conv)
 
-	if req.System != "You are helpful" {
-		t.Errorf("Request.System = %v, want 'You are helpful'", req.System)
+	if system != "You are helpful" {
+		t.Errorf("System = %v, want 'You are helpful'", system)
 	}
 
-	if len(req.Messages) != 2 {
-		t.Errorf("Expected 2 messages in request, got %d", len(req.Messages))
+	if len(messages) != 2 {
+		t.Errorf("Expected 2 messages, got %d", len(messages))
 	}
 
-	if req.Messages[0].Role != anthropic.RoleUser {
-		t.Errorf("First message role = %v, want user", req.Messages[0].Role)
+	if messages[0].Role != anthropic.RoleUser {
+		t.Errorf("First message role = %v, want user", messages[0].Role)
 	}
-	if req.Messages[1].Role != anthropic.RoleAssistant {
-		t.Errorf("Second message role = %v, want assistant", req.Messages[1].Role)
+	if messages[1].Role != anthropic.RoleAssistant {
+		t.Errorf("Second message role = %v, want assistant", messages[1].Role)
 	}
 }
 

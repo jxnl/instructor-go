@@ -39,11 +39,13 @@ func classify(data string) *Prediction {
 	conversation := core.NewConversation()
 	conversation.AddUserMessage(fmt.Sprintf("Classify the following support ticket: %s", data))
 
+	system, messages := anthropic.ConversationToMessages(conversation)
 	req := anthropicLib.MessagesRequest{
 		Model:     anthropicLib.ModelClaude3Haiku20240307,
 		MaxTokens: 500,
+		System:    system,
+		Messages:  messages,
 	}
-	anthropic.ConversationToRequest(conversation, &req)
 
 	var prediction Prediction
 	resp, err := client.CreateMessages(ctx, req, &prediction)

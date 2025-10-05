@@ -92,11 +92,8 @@ func FromCohereMessages(preamble string, messages []*cohere.Message) []core.Mess
 	return result
 }
 
-// ConversationToRequest is a convenience method to populate a Cohere request with conversation messages
-func ConversationToRequest(conv *core.Conversation, req *cohere.ChatRequest) {
-	preamble, chatHistory := ToCohereMessages(conv.GetMessages())
-	if preamble != "" {
-		req.Preamble = &preamble
-	}
-	req.ChatHistory = chatHistory
+// ConversationToMessages is a convenience method to convert a Conversation to Cohere messages
+// Returns the preamble (system prompt) and chat history that can be used to populate a ChatRequest
+func ConversationToMessages(conv *core.Conversation) (preamble string, chatHistory []*cohere.Message) {
+	return ToCohereMessages(conv.GetMessages())
 }

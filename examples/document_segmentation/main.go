@@ -70,10 +70,14 @@ Each line of the document is marked with its line number in square brackets (e.g
 `)
 		conversation.AddUserMessage(docWithLines)
 
+		preamble, chatHistory := cohere.ConversationToMessages(conversation)
 		req := &cohereLib.ChatRequest{
-			Model: toPtr("command-r-plus"),
+			Model:       toPtr("command-r-plus"),
+			ChatHistory: chatHistory,
 		}
-		cohere.ConversationToRequest(conversation, req)
+		if preamble != "" {
+			req.Preamble = &preamble
+		}
 
 		var structuredDoc StructuredDocument
 		_, err := client.Chat(ctx, req, &structuredDoc)
