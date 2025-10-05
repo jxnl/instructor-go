@@ -6,7 +6,9 @@ import (
 	"os"
 
 	"github.com/instructor-ai/instructor-go/pkg/instructor"
-	openai "github.com/sashabaranov/go-openai"
+	"github.com/instructor-ai/instructor-go/pkg/instructor/core"
+	"github.com/instructor-ai/instructor-go/pkg/instructor/providers/openai"
+	openaiLib "github.com/sashabaranov/go-openai"
 )
 
 type Product struct {
@@ -35,7 +37,7 @@ func main() {
 	ctx := context.Background()
 
 	client := instructor.FromOpenAI(
-		openai.NewClient(os.Getenv("OPENAI_API_KEY")),
+		openaiLib.NewClient(os.Getenv("OPENAI_API_KEY")),
 		instructor.WithMode(instructor.ModeJSON),
 	)
 
@@ -71,23 +73,17 @@ Preferred Shopping Times: Weekend Evenings
 		productList += product.String() + "\n"
 	}
 
-	recommendationChan, err := client.CreateChatCompletionStream(ctx, openai.ChatCompletionRequest{
-		Model: openai.GPT4o20240513,
-		Messages: []openai.ChatCompletionMessage{
-			{
-				Role: openai.ChatMessageRoleSystem,
-				Content: fmt.Sprintf(`
+	conversation := core.NewConversation(fmt.Sprintf(`
 Generate the product recommendations from the product list based on the customer profile.
 Return in order of highest recommended first.
 Product list:
-%s`, productList),
-			},
-			{
-				Role:    openai.ChatMessageRoleUser,
-				Content: fmt.Sprintf("User profile:\n%s", profileData),
-			},
-		},
-		Stream: true,
+%s`, productList))
+	conversation.AddUserMessage(fmt.Sprintf("User profile:\n%s", profileData))
+
+	recommendationChan, err := client.CreateChatCompletionStream(ctx, openaiLib.ChatCompletionRequest{
+		Model:    openaiLib.GPT4o20240513,
+		Messages: openai.ConversationToMessages(conversation),
+		Stream:   true,
 	},
 		*new(Recommendation),
 	)

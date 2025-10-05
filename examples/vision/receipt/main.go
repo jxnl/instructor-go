@@ -7,7 +7,9 @@ import (
 	"os"
 
 	"github.com/instructor-ai/instructor-go/pkg/instructor"
-	openai "github.com/sashabaranov/go-openai"
+	"github.com/instructor-ai/instructor-go/pkg/instructor/core"
+	"github.com/instructor-ai/instructor-go/pkg/instructor/providers/openai"
+	openaiLib "github.com/sashabaranov/go-openai"
 )
 
 type Item struct {
@@ -50,28 +52,15 @@ func (r *Receipt) Validate() error {
 
 func extract(ctx context.Context, client *instructor.InstructorOpenAI, url string) (*Receipt, error) {
 
+	conversation := core.NewConversation(`Analyze the image and return the items (include tax and coupons as their own items) in the receipt and the total amount.`)
+	conversation.AddUserMessageWithImageURLs("", url)
+
 	var receipt Receipt
 	_, err := client.CreateChatCompletion(
 		ctx,
-		openai.ChatCompletionRequest{
-			Model: openai.GPT4o,
-			Messages: []openai.ChatCompletionMessage{
-				{
-					Role:    openai.ChatMessageRoleSystem,
-					Content: `Analyze the image and return the items (include tax and coupons as their own items) in the receipt and the total amount.`,
-				},
-				{
-					Role: openai.ChatMessageRoleUser,
-					MultiContent: []openai.ChatMessagePart{
-						{
-							Type: openai.ChatMessagePartTypeImageURL,
-							ImageURL: &openai.ChatMessageImageURL{
-								URL: url,
-							},
-						},
-					},
-				},
-			},
+		openaiLib.ChatCompletionRequest{
+			Model:    openaiLib.GPT4o,
+			Messages: openai.ConversationToMessages(conversation),
 		},
 		&receipt,
 	)
@@ -90,7 +79,7 @@ func main() {
 	ctx := context.Background()
 
 	client := instructor.FromOpenAI(
-		openai.NewClient(os.Getenv("OPENAI_API_KEY")),
+		openaiLib.NewClient(os.Getenv("OPENAI_API_KEY")),
 		instructor.WithMode(instructor.ModeJSON),
 		instructor.WithMaxRetries(3),
 	)

@@ -6,7 +6,9 @@ import (
 	"os"
 
 	"github.com/instructor-ai/instructor-go/pkg/instructor"
-	openai "github.com/sashabaranov/go-openai"
+	"github.com/instructor-ai/instructor-go/pkg/instructor/core"
+	"github.com/instructor-ai/instructor-go/pkg/instructor/providers/openai"
+	openaiLib "github.com/sashabaranov/go-openai"
 )
 
 type SearchType string
@@ -32,20 +34,18 @@ type Searches = []Search
 func segment(ctx context.Context, data string) *Searches {
 
 	client := instructor.FromOpenAI(
-		openai.NewClient(os.Getenv("OPENAI_API_KEY")),
+		openaiLib.NewClient(os.Getenv("OPENAI_API_KEY")),
 		instructor.WithMode(instructor.ModeToolCall),
 		instructor.WithMaxRetries(3),
 	)
 
+	conversation := core.NewConversation()
+	conversation.AddUserMessage(fmt.Sprintf("Consider the data below: '\n%s' and segment it into multiple search queries", data))
+
 	var searches Searches
-	_, err := client.CreateChatCompletion(ctx, openai.ChatCompletionRequest{
-		Model: openai.GPT4o,
-		Messages: []openai.ChatCompletionMessage{
-			{
-				Role:    openai.ChatMessageRoleUser,
-				Content: fmt.Sprintf("Consider the data below: '\n%s' and segment it into multiple search queries", data),
-			},
-		},
+	_, err := client.CreateChatCompletion(ctx, openaiLib.ChatCompletionRequest{
+		Model:    openaiLib.GPT4o,
+		Messages: openai.ConversationToMessages(conversation),
 	},
 		&searches,
 	)

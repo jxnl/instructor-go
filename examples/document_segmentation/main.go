@@ -7,9 +7,11 @@ import (
 	"os"
 	"strings"
 
-	cohere "github.com/cohere-ai/cohere-go/v2"
+	cohereLib "github.com/cohere-ai/cohere-go/v2"
 	cohereclient "github.com/cohere-ai/cohere-go/v2/client"
 	"github.com/instructor-ai/instructor-go/pkg/instructor"
+	"github.com/instructor-ai/instructor-go/pkg/instructor/core"
+	"github.com/instructor-ai/instructor-go/pkg/instructor/providers/cohere"
 )
 
 type Section struct {
@@ -61,18 +63,20 @@ func main() {
 	}
 
 	getStructuredDocument := func(docWithLines string) *StructuredDocument {
-		var structuredDoc StructuredDocument
-		_, err := client.Chat(ctx, &cohere.ChatRequest{
-			Model: toPtr("command-r-plus"),
-			Preamble: toPtr(`
+		conversation := core.NewConversation(`
 You are a world class educator working on organizing your lecture notes.
 Read the document below and extract a StructuredDocument object from it where each section of the document is centered around a single concept/topic that can be taught in one lesson.
 Each line of the document is marked with its line number in square brackets (e.g. [1], [2], [3], etc). Use the line numbers to indicate section start and end.
-`),
-			Message: docWithLines,
-		},
-			&structuredDoc,
-		)
+`)
+		conversation.AddUserMessage(docWithLines)
+
+		req := &cohereLib.ChatRequest{
+			Model: toPtr("command-r-plus"),
+		}
+		cohere.ConversationToRequest(conversation, req)
+
+		var structuredDoc StructuredDocument
+		_, err := client.Chat(ctx, req, &structuredDoc)
 		if err != nil {
 			panic(err)
 		}

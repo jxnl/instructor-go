@@ -6,7 +6,9 @@ import (
 	"os"
 
 	"github.com/instructor-ai/instructor-go/pkg/instructor"
-	openai "github.com/sashabaranov/go-openai"
+	"github.com/instructor-ai/instructor-go/pkg/instructor/core"
+	"github.com/instructor-ai/instructor-go/pkg/instructor/providers/openai"
+	openaiLib "github.com/sashabaranov/go-openai"
 )
 
 type User struct {
@@ -43,26 +45,24 @@ func main() {
 	ctx := context.Background()
 
 	client := instructor.FromOpenAI(
-		openai.NewClient(os.Getenv("OPENAI_API_KEY")),
+		openaiLib.NewClient(os.Getenv("OPENAI_API_KEY")),
 		instructor.WithMode(instructor.ModeJSON),
 		instructor.WithMaxRetries(3),
 		instructor.WithValidation(),
 	)
 
+	conversation := core.NewConversation()
+	conversation.AddUserMessage("Meet Jane Doe: a 30-year-old adventurer who can be reached at janed@example.com. " +
+		"Jane loves the vibrant hue of #FF5733. She resides in Metropolis at 456 Oak St, on the wonderful planet Earth. " +
+		"To chat with her, dial (555) 555-1234. Jane also spends her weekends at her cottage located at 789 Pine St, " +
+		"in Smallville, on the same planet. You can contact her there at (555) 555-5678.")
+
 	var user User
 	_, err := client.CreateChatCompletion(
 		ctx,
-		openai.ChatCompletionRequest{
-			Model: openai.GPT4o,
-			Messages: []openai.ChatCompletionMessage{
-				{
-					Role: openai.ChatMessageRoleUser,
-					Content: "Meet Jane Doe: a 30-year-old adventurer who can be reached at janed@example.com. " +
-						"Jane loves the vibrant hue of #FF5733. She resides in Metropolis at 456 Oak St, on the wonderful planet Earth. " +
-						"To chat with her, dial (555) 555-1234. Jane also spends her weekends at her cottage located at 789 Pine St, " +
-						"in Smallville, on the same planet. You can contact her there at (555) 555-5678.",
-				},
-			},
+		openaiLib.ChatCompletionRequest{
+			Model:    openaiLib.GPT4o,
+			Messages: openai.ConversationToMessages(conversation),
 		},
 		&user,
 	)

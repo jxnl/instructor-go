@@ -216,6 +216,107 @@ See the complete agent example: [`examples/agent/main.go`](examples/agent/main.g
 - **Retry Logic**: Built-in retry handling for invalid discriminator values
 - **Multiple Modes**: Works with all instructor modes (ToolCall, JSON, etc.)
 
+## Conversation History
+
+Instructor Go provides a unified conversation history API that works across all providers. This simplifies managing multi-turn conversations without dealing with provider-specific message formats.
+
+### Basic Usage
+
+```go
+import (
+    "github.com/instructor-ai/instructor-go/pkg/instructor/core"
+    "github.com/instructor-ai/instructor-go/pkg/instructor/providers/openai"
+    openaiLib "github.com/sashabaranov/go-openai"
+)
+
+// Create a conversation with a system prompt
+conversation := core.NewConversation("You are a helpful assistant")
+
+// Or without a system prompt
+conversation := core.NewConversation()
+
+// Add messages to the conversation
+conversation.AddUserMessage("What's the weather in SF?")
+
+// Convert to provider-specific format and use in requests
+resp, err := client.CreateChatCompletion(
+    ctx,
+    openaiLib.ChatCompletionRequest{
+        Model:    openaiLib.GPT4,
+        Messages: openai.ConversationToMessages(conversation),
+    },
+    &response,
+)
+
+// Add assistant response
+conversation.AddAssistantMessage(result)
+
+// Continue the conversation
+conversation.AddUserMessage("Now check Boston")
+```
+
+### Vision / Multi-Modal Support
+
+```go
+// Add a message with an image URL
+conversation.AddUserMessageWithImageURLs(
+    "What's in this image?",
+    "https://example.com/image.jpg",
+)
+
+// Add a message with multiple images
+conversation.AddUserMessageWithImageURLs(
+    "Compare these images",
+    "https://example.com/img1.jpg",
+    "https://example.com/img2.jpg",
+)
+
+// Add a message with raw image data
+imageData, _ := os.ReadFile("image.jpg")
+conversation.AddUserMessageWithImageData("Analyze this", imageData)
+
+// The provider adapter automatically converts to the correct format
+messages := openai.ConversationToMessages(conversation)
+```
+
+### Multi-Provider Support
+
+The same conversation can be used across different providers:
+
+```go
+// OpenAI
+messages := openai.ConversationToMessages(conversation)
+
+// Anthropic
+req := anthropic.MessagesRequest{...}
+anthropic.ConversationToRequest(conversation, &req)
+
+// Google
+contents := google.ConversationToContents(conversation)
+
+// Cohere
+req := cohere.ChatRequest{...}
+cohere.ConversationToRequest(conversation, &req)
+```
+
+### Conversation Management
+
+```go
+// Get all messages
+messages := conversation.GetMessages()
+
+// Get conversation length
+length := conversation.Length()
+
+// Clear all messages
+conversation.Clear()
+
+// Clear but keep system message
+conversation.ClearKeepingSystem()
+```
+
+See the complete agent example: [`examples/agent/main.go`](examples/agent/main.go)
+
 ## Providers
 
 Instructor Go supports the following LLM provider APIs:
