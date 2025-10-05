@@ -38,6 +38,26 @@ func (i *InstructorOpenAI) CreateChatCompletion(
 	return response, nil
 }
 
+// CreateChatCompletionUnion handles chat completion with union type extraction
+func (i *InstructorOpenAI) CreateChatCompletionUnion(
+	ctx context.Context,
+	request openai.ChatCompletionRequest,
+	opts core.UnionOptions,
+) (result any, response openai.ChatCompletionResponse, err error) {
+
+	result, resp, err := core.ChatHandlerUnion(i, ctx, request, opts)
+	if err != nil {
+		if resp == nil {
+			return nil, openai.ChatCompletionResponse{}, err
+		}
+		return nil, *nilOpenaiRespWithUsage(resp.(*openai.ChatCompletionResponse)), err
+	}
+
+	response = *(resp.(*openai.ChatCompletionResponse))
+
+	return result, response, nil
+}
+
 func (i *InstructorOpenAI) InternalChat(ctx context.Context, request interface{}, schema *core.Schema) (string, interface{}, error) {
 
 	req, ok := request.(openai.ChatCompletionRequest)
@@ -90,7 +110,36 @@ func (i *InstructorOpenAI) chatToolCall(ctx context.Context, request *openai.Cha
 	}
 
 	if numTools == 1 {
-		return toolCalls[0].Function.Arguments, &resp, nil
+		// For union types with multiple functions, inject the function name into the arguments
+		args := toolCalls[0].Function.Arguments
+		funcName := toolCalls[0].Function.Name
+
+		// If we have multiple functions in schema, this might be a union type
+		// Inject the function name as a field if the JSON doesn't already have it
+		if len(schema.Functions) > 1 {
+			var argMap map[string]any
+			if err := json.Unmarshal([]byte(args), &argMap); err == nil {
+				// Try to find a discriminator field by checking if function name matches a field value
+				hasDiscriminator := false
+				for _, v := range argMap {
+					if str, ok := v.(string); ok && str == funcName {
+						hasDiscriminator = true
+						break
+					}
+				}
+
+				// If no discriminator found, inject it as "type" field
+				if !hasDiscriminator {
+					argMap["type"] = funcName
+					modifiedArgs, err := json.Marshal(argMap)
+					if err == nil {
+						args = string(modifiedArgs)
+					}
+				}
+			}
+		}
+
+		return args, &resp, nil
 	}
 
 	// numTools >= 1

@@ -25,6 +25,26 @@ func (i *InstructorAnthropic) CreateMessages(ctx context.Context, request anthro
 	return response, nil
 }
 
+// CreateMessagesUnion handles messages with union type extraction
+func (i *InstructorAnthropic) CreateMessagesUnion(
+	ctx context.Context,
+	request anthropic.MessagesRequest,
+	opts core.UnionOptions,
+) (result any, response anthropic.MessagesResponse, err error) {
+
+	result, resp, err := core.ChatHandlerUnion(i, ctx, request, opts)
+	if err != nil {
+		if resp == nil {
+			return nil, anthropic.MessagesResponse{}, err
+		}
+		return nil, *nilAnthropicRespWithUsage(resp.(*anthropic.MessagesResponse)), err
+	}
+
+	response = *(resp.(*anthropic.MessagesResponse))
+
+	return result, response, nil
+}
+
 func (i *InstructorAnthropic) InternalChat(ctx context.Context, request interface{}, schema *core.Schema) (string, interface{}, error) {
 
 	req, ok := request.(anthropic.MessagesRequest)
@@ -74,6 +94,32 @@ func (i *InstructorAnthropic) completionToolCall(ctx context.Context, request *a
 		if err != nil {
 			return "", nilAnthropicRespWithUsage(&resp), err
 		}
+
+		// For union types with multiple functions, inject the function name as discriminator
+		toolName := c.Name
+		if len(schema.Functions) > 1 {
+			var inputMap map[string]any
+			if err := json.Unmarshal(toolInput, &inputMap); err == nil {
+				// Check if discriminator already exists
+				hasDiscriminator := false
+				for _, v := range inputMap {
+					if str, ok := v.(string); ok && str == toolName {
+						hasDiscriminator = true
+						break
+					}
+				}
+
+				// If no discriminator found, inject it as "type" field
+				if !hasDiscriminator {
+					inputMap["type"] = toolName
+					modifiedInput, err := json.Marshal(inputMap)
+					if err == nil {
+						toolInput = modifiedInput
+					}
+				}
+			}
+		}
+
 		// TODO: handle more than 1 tool use
 		return string(toolInput), &resp, nil
 	}

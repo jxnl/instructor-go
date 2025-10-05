@@ -15,12 +15,15 @@ import (
 
 // Re-export core types and interfaces
 type (
-	Instructor = core.Instructor
-	Mode       = core.Mode
-	Provider   = core.Provider
-	Schema     = core.Schema
-	Options    = core.Options
-	UsageSum   = core.UsageSum
+	Instructor           = core.Instructor
+	Mode                 = core.Mode
+	Provider             = core.Provider
+	Schema               = core.Schema
+	Options              = core.Options
+	UsageSum             = core.UsageSum
+	UnionOptions         = core.UnionOptions
+	UnionSchema          = core.UnionSchema
+	UnionValidationError = core.UnionValidationError
 )
 
 // Re-export provider-specific types for backward compatibility
@@ -71,10 +74,12 @@ var (
 
 // Re-export core functions
 var (
-	NewSchema    = core.NewSchema
-	ChatHandler  = core.ChatHandler
-	ExtractJSON  = core.ExtractJSON
-	MergeOptions = core.MergeOptions
+	NewSchema        = core.NewSchema
+	NewUnionSchema   = core.NewUnionSchema
+	ChatHandler      = core.ChatHandler
+	ChatHandlerUnion = core.ChatHandlerUnion
+	ExtractJSON      = core.ExtractJSON
+	MergeOptions     = core.MergeOptions
 )
 
 // Re-export generic functions

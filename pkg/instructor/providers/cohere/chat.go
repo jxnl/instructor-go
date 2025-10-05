@@ -28,6 +28,25 @@ func (i *InstructorCohere) Chat(
 	return resp.(*cohere.NonStreamedChatResponse), nil
 }
 
+// ChatUnion handles chat with union type extraction
+func (i *InstructorCohere) ChatUnion(
+	ctx context.Context,
+	request *cohere.ChatRequest,
+	opts core.UnionOptions,
+	cohereOpts ...option.RequestOption,
+) (result any, response *cohere.NonStreamedChatResponse, err error) {
+
+	result, resp, err := core.ChatHandlerUnion(i, ctx, request, opts)
+	if err != nil {
+		if resp == nil {
+			return nil, &cohere.NonStreamedChatResponse{}, err
+		}
+		return nil, nilCohereRespWithUsage(resp.(*cohere.NonStreamedChatResponse)), err
+	}
+
+	return result, resp.(*cohere.NonStreamedChatResponse), nil
+}
+
 func (i *InstructorCohere) InternalChat(ctx context.Context, request interface{}, schema *core.Schema) (string, interface{}, error) {
 
 	req, ok := request.(*cohere.ChatRequest)
