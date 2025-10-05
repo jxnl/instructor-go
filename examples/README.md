@@ -249,7 +249,7 @@ func main() {
 				MultiContent: []openai.ChatMessagePart{
 					{
 						Type: openai.ChatMessagePartTypeText,
-						Text: "Extract book catelog from the image",
+						Text: "Extract book catalog from the image",
 					},
 					{
 						Type: openai.ChatMessagePartTypeImageURL,

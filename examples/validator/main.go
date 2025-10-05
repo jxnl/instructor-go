@@ -6,7 +6,9 @@ import (
 	"os"
 
 	"github.com/instructor-ai/instructor-go/pkg/instructor"
-	openai "github.com/sashabaranov/go-openai"
+	"github.com/instructor-ai/instructor-go/pkg/instructor/core"
+	instructor_openai "github.com/instructor-ai/instructor-go/pkg/instructor/providers/openai"
+	"github.com/sashabaranov/go-openai"
 )
 
 type User struct {
@@ -49,20 +51,18 @@ func main() {
 		instructor.WithValidation(),
 	)
 
+	conversation := core.NewConversation()
+	conversation.AddUserMessage("Meet Jane Doe: a 30-year-old adventurer who can be reached at janed@example.com. " +
+		"Jane loves the vibrant hue of #FF5733. She resides in Metropolis at 456 Oak St, on the wonderful planet Earth. " +
+		"To chat with her, dial (555) 555-1234. Jane also spends her weekends at her cottage located at 789 Pine St, " +
+		"in Smallville, on the same planet. You can contact her there at (555) 555-5678.")
+
 	var user User
 	_, err := client.CreateChatCompletion(
 		ctx,
 		openai.ChatCompletionRequest{
-			Model: openai.GPT4o,
-			Messages: []openai.ChatCompletionMessage{
-				{
-					Role: openai.ChatMessageRoleUser,
-					Content: "Meet Jane Doe: a 30-year-old adventurer who can be reached at janed@example.com. " +
-						"Jane loves the vibrant hue of #FF5733. She resides in Metropolis at 456 Oak St, on the wonderful planet Earth. " +
-						"To chat with her, dial (555) 555-1234. Jane also spends her weekends at her cottage located at 789 Pine St, " +
-						"in Smallville, on the same planet. You can contact her there at (555) 555-5678.",
-				},
-			},
+			Model:    openai.GPT4o,
+			Messages: instructor_openai.ConversationToMessages(conversation),
 		},
 		&user,
 	)

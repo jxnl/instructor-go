@@ -6,7 +6,9 @@ import (
 	"os"
 
 	"github.com/instructor-ai/instructor-go/pkg/instructor"
-	openai "github.com/sashabaranov/go-openai"
+	"github.com/instructor-ai/instructor-go/pkg/instructor/core"
+	instructor_openai "github.com/instructor-ai/instructor-go/pkg/instructor/providers/openai"
+	"github.com/sashabaranov/go-openai"
 )
 
 type Book struct {
@@ -38,26 +40,13 @@ func main() {
 
 	url := "https://raw.githubusercontent.com/instructor-ai/instructor-go/main/examples/vision/openai/books.png"
 
+	conversation := core.NewConversation()
+	conversation.AddUserMessageWithImageURLs("Extract book catalog from the image", url)
+
 	var bookCatalog BookCatalog
 	_, err := client.CreateChatCompletion(ctx, openai.ChatCompletionRequest{
-		Model: openai.GPT4o,
-		Messages: []openai.ChatCompletionMessage{
-			{
-				Role: openai.ChatMessageRoleUser,
-				MultiContent: []openai.ChatMessagePart{
-					{
-						Type: openai.ChatMessagePartTypeText,
-						Text: "Extract book catelog from the image",
-					},
-					{
-						Type: openai.ChatMessagePartTypeImageURL,
-						ImageURL: &openai.ChatMessageImageURL{
-							URL: url,
-						},
-					},
-				},
-			},
-		},
+		Model:    openai.GPT4o,
+		Messages: instructor_openai.ConversationToMessages(conversation),
 	},
 		&bookCatalog,
 	)

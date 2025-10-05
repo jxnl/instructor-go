@@ -5,7 +5,9 @@ import (
 	"fmt"
 
 	"github.com/instructor-ai/instructor-go/pkg/instructor"
-	openai "github.com/sashabaranov/go-openai"
+	"github.com/instructor-ai/instructor-go/pkg/instructor/core"
+	instructor_openai "github.com/instructor-ai/instructor-go/pkg/instructor/providers/openai"
+	"github.com/sashabaranov/go-openai"
 )
 
 type Character struct {
@@ -40,15 +42,13 @@ func main() {
 		instructor.WithMaxRetries(3),
 	)
 
+	conversation := core.NewConversation()
+	conversation.AddUserMessage("Tell me about the Hal 9000")
+
 	var character Character
 	_, err := client.CreateChatCompletion(ctx, openai.ChatCompletionRequest{
-		Model: "llama3",
-		Messages: []openai.ChatCompletionMessage{
-			{
-				Role:    openai.ChatMessageRoleUser,
-				Content: "Tell me about the Hal 9000",
-			},
-		},
+		Model:    "llama3",
+		Messages: instructor_openai.ConversationToMessages(conversation),
 	},
 		&character,
 	)

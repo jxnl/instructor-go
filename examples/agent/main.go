@@ -7,7 +7,9 @@ import (
 	"strings"
 
 	"github.com/instructor-ai/instructor-go/pkg/instructor"
-	openai "github.com/sashabaranov/go-openai"
+	"github.com/instructor-ai/instructor-go/pkg/instructor/core"
+	instructor_openai "github.com/instructor-ai/instructor-go/pkg/instructor/providers/openai"
+	"github.com/sashabaranov/go-openai"
 )
 
 // Define the tool types with discriminator fields
@@ -43,36 +45,26 @@ func (f FinishTool) Execute() string {
 
 // Agent orchestrates tool selection and execution
 type Agent struct {
-	client  *instructor.InstructorOpenAI
-	history []openai.ChatCompletionMessage
+	client       *instructor.InstructorOpenAI
+	conversation *core.Conversation
 }
 
 func NewAgent(client *instructor.InstructorOpenAI) *Agent {
 	return &Agent{
-		client:  client,
-		history: []openai.ChatCompletionMessage{},
-	}
-}
-
-func (a *Agent) Run(ctx context.Context, goal string) (string, error) {
-	// Add the user goal to history
-	a.history = append(a.history, openai.ChatCompletionMessage{
-		Role:    openai.ChatMessageRoleUser,
-		Content: goal,
-	})
-
-	// Add system message for agent behavior
-	systemMessage := openai.ChatCompletionMessage{
-		Role: openai.ChatMessageRoleSystem,
-		Content: `You are a helpful agent that can use tools to answer questions.
+		client: client,
+		conversation: core.NewConversation(`You are a helpful agent that can use tools to answer questions.
 Available tools:
 - search: Search for information
 - lookup: Look up detailed information about a specific keyword
 - finish: Return the final answer
 
-Use the tools step by step to gather information before finishing with your answer.`,
+Use the tools step by step to gather information before finishing with your answer.`),
 	}
-	messages := append([]openai.ChatCompletionMessage{systemMessage}, a.history...)
+}
+
+func (a *Agent) Run(ctx context.Context, goal string) (string, error) {
+	// Add the user goal to conversation
+	a.conversation.AddUserMessage(goal)
 
 	maxTurns := 10
 	for turn := 0; turn < maxTurns; turn++ {
@@ -83,7 +75,7 @@ Use the tools step by step to gather information before finishing with your answ
 			ctx,
 			openai.ChatCompletionRequest{
 				Model:    openai.GPT5Mini,
-				Messages: messages,
+				Messages: instructor_openai.ConversationToMessages(a.conversation),
 			},
 			instructor.UnionOptions{
 				Discriminator: "type",
@@ -127,20 +119,9 @@ Use the tools step by step to gather information before finishing with your answ
 			return "", fmt.Errorf("unknown tool type: %T", action)
 		}
 
-		// Add assistant's tool choice to history
-		a.history = append(a.history, openai.ChatCompletionMessage{
-			Role:    openai.ChatMessageRoleAssistant,
-			Content: fmt.Sprintf("Using tool: %s", toolName),
-		})
-
-		// Add tool result to history
-		a.history = append(a.history, openai.ChatCompletionMessage{
-			Role:    openai.ChatMessageRoleUser,
-			Content: fmt.Sprintf("Tool result: %s", result),
-		})
-
-		// Update messages for next turn
-		messages = append([]openai.ChatCompletionMessage{systemMessage}, a.history...)
+		// Add assistant's tool choice and result to conversation
+		a.conversation.AddAssistantMessage(fmt.Sprintf("Using tool: %s", toolName))
+		a.conversation.AddUserMessage(fmt.Sprintf("Tool result: %s", result))
 	}
 
 	return "", fmt.Errorf("reached maximum turns (%d) without completing task", maxTurns)

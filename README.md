@@ -25,6 +25,8 @@ Import in your code:
 ```go
 import (
 	"github.com/instructor-ai/instructor-go/pkg/instructor"
+	instructor_openai "github.com/instructor-ai/instructor-go/pkg/instructor/providers/openai"
+	"github.com/sashabaranov/go-openai"
 )
 ```
 
@@ -50,7 +52,9 @@ import (
 	"os"
 
 	"github.com/instructor-ai/instructor-go/pkg/instructor"
-	openai "github.com/sashabaranov/go-openai"
+	"github.com/instructor-ai/instructor-go/pkg/instructor/core"
+	instructor_openai "github.com/instructor-ai/instructor-go/pkg/instructor/providers/openai"
+	"github.com/sashabaranov/go-openai"
 )
 
 type Person struct {
@@ -67,17 +71,15 @@ func main() {
 		instructor.WithMaxRetries(3),
 	)
 
+	conversation := core.NewConversation()
+	conversation.AddUserMessage("Extract Robby is 22 years old.")
+
 	var person Person
 	resp, err := client.CreateChatCompletion(
 		ctx,
 		openai.ChatCompletionRequest{
-			Model: openai.GPT4o,
-			Messages: []openai.ChatCompletionMessage{
-				{
-					Role:    openai.ChatMessageRoleUser,
-					Content: "Extract Robby is 22 years old.",
-				},
-			},
+			Model:    openai.GPT4o,
+			Messages: instructor_openai.ConversationToMessages(conversation),
 		},
 		&person,
 	)
@@ -215,6 +217,122 @@ See the complete agent example: [`examples/agent/main.go`](examples/agent/main.g
 - **Validation**: Automatic validation of discriminator uniqueness and field presence
 - **Retry Logic**: Built-in retry handling for invalid discriminator values
 - **Multiple Modes**: Works with all instructor modes (ToolCall, JSON, etc.)
+
+## Conversation History
+
+Instructor Go provides a unified conversation history API that works across all providers. This simplifies managing multi-turn conversations without dealing with provider-specific message formats.
+
+### Basic Usage
+
+```go
+import (
+    "github.com/instructor-ai/instructor-go/pkg/instructor/core"
+    instructor_openai "github.com/instructor-ai/instructor-go/pkg/instructor/providers/openai"
+    "github.com/sashabaranov/go-openai"
+)
+
+// Create a conversation with a system prompt
+conversation := core.NewConversation("You are a helpful assistant")
+
+// Or without a system prompt
+conversation := core.NewConversation()
+
+// Add messages to the conversation
+conversation.AddUserMessage("What's the weather in SF?")
+
+// Convert to provider-specific format and use in requests
+resp, err := client.CreateChatCompletion(
+    ctx,
+    openai.ChatCompletionRequest{
+        Model:    openai.GPT4,
+        Messages: instructor_openai.ConversationToMessages(conversation),
+    },
+    &response,
+)
+
+// Add assistant response
+conversation.AddAssistantMessage(result)
+
+// Continue the conversation
+conversation.AddUserMessage("Now check Boston")
+```
+
+### Vision / Multi-Modal Support
+
+```go
+// Add a message with an image URL
+conversation.AddUserMessageWithImageURLs(
+    "What's in this image?",
+    "https://example.com/image.jpg",
+)
+
+// Add a message with multiple images
+conversation.AddUserMessageWithImageURLs(
+    "Compare these images",
+    "https://example.com/img1.jpg",
+    "https://example.com/img2.jpg",
+)
+
+// Add a message with raw image data
+imageData, _ := os.ReadFile("image.jpg")
+conversation.AddUserMessageWithImageData("Analyze this", imageData)
+
+// The provider adapter automatically converts to the correct format
+messages := instructor_openai.ConversationToMessages(conversation)
+```
+
+### Multi-Provider Support
+
+The same conversation can be used across different providers using a consistent functional API:
+
+```go
+import (
+    instructor_openai "github.com/instructor-ai/instructor-go/pkg/instructor/providers/openai"
+    instructor_anthropic "github.com/instructor-ai/instructor-go/pkg/instructor/providers/anthropic"
+    instructor_google "github.com/instructor-ai/instructor-go/pkg/instructor/providers/google"
+    instructor_cohere "github.com/instructor-ai/instructor-go/pkg/instructor/providers/cohere"
+)
+
+// OpenAI
+messages := instructor_openai.ConversationToMessages(conversation)
+
+// Anthropic - returns system prompt and messages
+system, messages := instructor_anthropic.ConversationToMessages(conversation)
+req := anthropic.MessagesRequest{
+    Model:    anthropic.ModelClaude3Haiku20240307,
+    System:   system,
+    Messages: messages,
+}
+
+// Google
+contents := instructor_google.ConversationToContents(conversation)
+
+// Cohere - returns preamble and chat history
+preamble, chatHistory := instructor_cohere.ConversationToMessages(conversation)
+req := cohere.ChatRequest{
+    Model:       "command-r-plus",
+    Preamble:    &preamble,
+    ChatHistory: chatHistory,
+}
+```
+
+### Conversation Management
+
+```go
+// Get all messages
+messages := conversation.GetMessages()
+
+// Get conversation length
+length := conversation.Length()
+
+// Clear all messages
+conversation.Clear()
+
+// Clear but keep system message
+conversation.ClearKeepingSystem()
+```
+
+See the complete agent example: [`examples/agent/main.go`](examples/agent/main.go)
 
 ## Providers
 

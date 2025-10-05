@@ -6,7 +6,9 @@ import (
 	"os"
 
 	"github.com/instructor-ai/instructor-go/pkg/instructor"
-	openai "github.com/sashabaranov/go-openai"
+	"github.com/instructor-ai/instructor-go/pkg/instructor/core"
+	instructor_openai "github.com/instructor-ai/instructor-go/pkg/instructor/providers/openai"
+	"github.com/sashabaranov/go-openai"
 )
 
 type Product struct {
@@ -71,23 +73,17 @@ Preferred Shopping Times: Weekend Evenings
 		productList += product.String() + "\n"
 	}
 
-	recommendationChan, err := client.CreateChatCompletionStream(ctx, openai.ChatCompletionRequest{
-		Model: openai.GPT4o20240513,
-		Messages: []openai.ChatCompletionMessage{
-			{
-				Role: openai.ChatMessageRoleSystem,
-				Content: fmt.Sprintf(`
+	conversation := core.NewConversation(fmt.Sprintf(`
 Generate the product recommendations from the product list based on the customer profile.
 Return in order of highest recommended first.
 Product list:
-%s`, productList),
-			},
-			{
-				Role:    openai.ChatMessageRoleUser,
-				Content: fmt.Sprintf("User profile:\n%s", profileData),
-			},
-		},
-		Stream: true,
+%s`, productList))
+	conversation.AddUserMessage(fmt.Sprintf("User profile:\n%s", profileData))
+
+	recommendationChan, err := client.CreateChatCompletionStream(ctx, openai.ChatCompletionRequest{
+		Model:    openai.GPT4o20240513,
+		Messages: instructor_openai.ConversationToMessages(conversation),
+		Stream:   true,
 	},
 		*new(Recommendation),
 	)

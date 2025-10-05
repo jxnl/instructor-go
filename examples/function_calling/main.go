@@ -6,7 +6,9 @@ import (
 	"os"
 
 	"github.com/instructor-ai/instructor-go/pkg/instructor"
-	openai "github.com/sashabaranov/go-openai"
+	"github.com/instructor-ai/instructor-go/pkg/instructor/core"
+	instructor_openai "github.com/instructor-ai/instructor-go/pkg/instructor/providers/openai"
+	"github.com/sashabaranov/go-openai"
 )
 
 type SearchType string
@@ -37,15 +39,13 @@ func segment(ctx context.Context, data string) *Searches {
 		instructor.WithMaxRetries(3),
 	)
 
+	conversation := core.NewConversation()
+	conversation.AddUserMessage(fmt.Sprintf("Consider the data below: '\n%s' and segment it into multiple search queries", data))
+
 	var searches Searches
 	_, err := client.CreateChatCompletion(ctx, openai.ChatCompletionRequest{
-		Model: openai.GPT4o,
-		Messages: []openai.ChatCompletionMessage{
-			{
-				Role:    openai.ChatMessageRoleUser,
-				Content: fmt.Sprintf("Consider the data below: '\n%s' and segment it into multiple search queries", data),
-			},
-		},
+		Model:    openai.GPT4o,
+		Messages: instructor_openai.ConversationToMessages(conversation),
 	},
 		&searches,
 	)

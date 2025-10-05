@@ -7,7 +7,9 @@ import (
 	"strings"
 
 	"github.com/instructor-ai/instructor-go/pkg/instructor"
-	openai "github.com/sashabaranov/go-openai"
+	"github.com/instructor-ai/instructor-go/pkg/instructor/core"
+	instructor_openai "github.com/instructor-ai/instructor-go/pkg/instructor/providers/openai"
+	"github.com/sashabaranov/go-openai"
 )
 
 // Define different notification types
@@ -44,16 +46,14 @@ func main() {
 	fmt.Println("Example 1: Extracting email notification")
 	fmt.Println(strings.Repeat("-", 60))
 
+	conversation1 := core.NewConversation()
+	conversation1.AddUserMessage("Send an email to john@example.com with subject 'Meeting Tomorrow' and body 'Don't forget our meeting at 2pm'")
+
 	result1, resp1, err := client.CreateChatCompletionUnion(
 		ctx,
 		openai.ChatCompletionRequest{
-			Model: openai.GPT4oMini,
-			Messages: []openai.ChatCompletionMessage{
-				{
-					Role:    openai.ChatMessageRoleUser,
-					Content: "Send an email to john@example.com with subject 'Meeting Tomorrow' and body 'Don't forget our meeting at 2pm'",
-				},
-			},
+			Model:    openai.GPT4oMini,
+			Messages: instructor_openai.ConversationToMessages(conversation1),
 		},
 		instructor.UnionOptions{
 			Discriminator: "type",
@@ -77,16 +77,14 @@ func main() {
 	fmt.Println("\nExample 2: Extracting SMS notification")
 	fmt.Println(strings.Repeat("-", 60))
 
+	conversation2 := core.NewConversation()
+	conversation2.AddUserMessage("Text +1-555-0123 saying 'Your order has been delivered'")
+
 	result2, resp2, err := client.CreateChatCompletionUnion(
 		ctx,
 		openai.ChatCompletionRequest{
-			Model: openai.GPT4oMini,
-			Messages: []openai.ChatCompletionMessage{
-				{
-					Role:    openai.ChatMessageRoleUser,
-					Content: "Text +1-555-0123 saying 'Your order has been delivered'",
-				},
-			},
+			Model:    openai.GPT4oMini,
+			Messages: instructor_openai.ConversationToMessages(conversation2),
 		},
 		instructor.UnionOptions{
 			Discriminator: "type",
@@ -109,16 +107,14 @@ func main() {
 	fmt.Println("\nExample 3: Extracting push notification")
 	fmt.Println(strings.Repeat("-", 60))
 
+	conversation3 := core.NewConversation()
+	conversation3.AddUserMessage("Send a push notification with title 'New Message' and body 'You have 3 new messages'")
+
 	result3, resp3, err := client.CreateChatCompletionUnion(
 		ctx,
 		openai.ChatCompletionRequest{
-			Model: openai.GPT4oMini,
-			Messages: []openai.ChatCompletionMessage{
-				{
-					Role:    openai.ChatMessageRoleUser,
-					Content: "Send a push notification with title 'New Message' and body 'You have 3 new messages'",
-				},
-			},
+			Model:    openai.GPT4oMini,
+			Messages: instructor_openai.ConversationToMessages(conversation3),
 		},
 		instructor.UnionOptions{
 			Discriminator: "type",

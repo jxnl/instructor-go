@@ -6,7 +6,9 @@ import (
 	"os"
 
 	"github.com/instructor-ai/instructor-go/pkg/instructor"
-	openai "github.com/sashabaranov/go-openai"
+	"github.com/instructor-ai/instructor-go/pkg/instructor/core"
+	instructor_openai "github.com/instructor-ai/instructor-go/pkg/instructor/providers/openai"
+	"github.com/sashabaranov/go-openai"
 )
 
 type Person struct {
@@ -23,17 +25,15 @@ func main() {
 		instructor.WithMaxRetries(3),
 	)
 
+	conversation := core.NewConversation()
+	conversation.AddUserMessage("Extract Robby is 22 years old.")
+
 	var person Person
 	resp, err := client.CreateChatCompletion(
 		ctx,
 		openai.ChatCompletionRequest{
-			Model: openai.GPT4o,
-			Messages: []openai.ChatCompletionMessage{
-				{
-					Role:    openai.ChatMessageRoleUser,
-					Content: "Extract Robby is 22 years old.",
-				},
-			},
+			Model:    openai.GPT4o,
+			Messages: instructor_openai.ConversationToMessages(conversation),
 		},
 		&person,
 	)

@@ -11,7 +11,9 @@ import (
 	"strings"
 
 	"github.com/instructor-ai/instructor-go/pkg/instructor"
-	openai "github.com/sashabaranov/go-openai"
+	"github.com/instructor-ai/instructor-go/pkg/instructor/core"
+	instructor_openai "github.com/instructor-ai/instructor-go/pkg/instructor/providers/openai"
+	"github.com/sashabaranov/go-openai"
 )
 
 type PriorityEnum string
@@ -103,22 +105,16 @@ Carol: I can take that on once the front-end changes for the authentication syst
 Alice: Sounds like a plan. Let's get these tasks modeled out and get started.
 `
 
+	conversation := core.NewConversation("The following is a transcript of a meeting between a manager and their team. The manager is assigning tasks to their team members and creating action items for them to complete.")
+	conversation.AddUserMessage(fmt.Sprintf("Create the action items for the following transcript: %s", transcript))
+
 	var actionItems ActionItems
 	_, err := client.CreateChatCompletion(
 		ctx,
 		openai.ChatCompletionRequest{
 			Model:       openai.GPT4oMini20240718,
 			Temperature: .2,
-			Messages: []openai.ChatCompletionMessage{
-				{
-					Role:    openai.ChatMessageRoleSystem,
-					Content: "The following is a transcript of a meeting between a manager and their team. The manager is assigning tasks to their team members and creating action items for them to complete.",
-				},
-				{
-					Role:    openai.ChatMessageRoleUser,
-					Content: fmt.Sprintf("Create the action items for the following transcript: %s", transcript),
-				},
-			},
+			Messages:    instructor_openai.ConversationToMessages(conversation),
 		},
 		&actionItems,
 	)
