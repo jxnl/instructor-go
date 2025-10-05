@@ -8,8 +8,8 @@ import (
 
 	"github.com/instructor-ai/instructor-go/pkg/instructor"
 	"github.com/instructor-ai/instructor-go/pkg/instructor/core"
-	"github.com/instructor-ai/instructor-go/pkg/instructor/providers/openai"
-	openaiLib "github.com/sashabaranov/go-openai"
+	instructor_openai "github.com/instructor-ai/instructor-go/pkg/instructor/providers/openai"
+	"github.com/sashabaranov/go-openai"
 )
 
 // Define the tool types with discriminator fields
@@ -73,9 +73,9 @@ func (a *Agent) Run(ctx context.Context, goal string) (string, error) {
 		// Let the LLM choose a tool
 		action, resp, err := a.client.CreateChatCompletionUnion(
 			ctx,
-			openaiLib.ChatCompletionRequest{
-				Model:    openaiLib.GPT5Mini,
-				Messages: openai.ConversationToMessages(a.conversation),
+			openai.ChatCompletionRequest{
+				Model:    openai.GPT5Mini,
+				Messages: instructor_openai.ConversationToMessages(a.conversation),
 			},
 			instructor.UnionOptions{
 				Discriminator: "type",
@@ -132,7 +132,7 @@ func main() {
 
 	// Initialize the instructor client
 	client := instructor.FromOpenAI(
-		openaiLib.NewClient(os.Getenv("OPENAI_API_KEY")),
+		openai.NewClient(os.Getenv("OPENAI_API_KEY")),
 		instructor.WithMode(instructor.ModeToolCall),
 		instructor.WithMaxRetries(3),
 	)

@@ -8,8 +8,8 @@ import (
 
 	"github.com/instructor-ai/instructor-go/pkg/instructor"
 	"github.com/instructor-ai/instructor-go/pkg/instructor/core"
-	"github.com/instructor-ai/instructor-go/pkg/instructor/providers/openai"
-	openaiLib "github.com/sashabaranov/go-openai"
+	instructor_openai "github.com/instructor-ai/instructor-go/pkg/instructor/providers/openai"
+	"github.com/sashabaranov/go-openai"
 )
 
 // Define different notification types
@@ -37,7 +37,7 @@ func main() {
 	ctx := context.Background()
 
 	client := instructor.FromOpenAI(
-		openaiLib.NewClient(os.Getenv("OPENAI_API_KEY")),
+		openai.NewClient(os.Getenv("OPENAI_API_KEY")),
 		instructor.WithMode(instructor.ModeToolCall),
 		instructor.WithMaxRetries(3),
 	)
@@ -51,9 +51,9 @@ func main() {
 
 	result1, resp1, err := client.CreateChatCompletionUnion(
 		ctx,
-		openaiLib.ChatCompletionRequest{
-			Model:    openaiLib.GPT4oMini,
-			Messages: openai.ConversationToMessages(conversation1),
+		openai.ChatCompletionRequest{
+			Model:    openai.GPT4oMini,
+			Messages: instructor_openai.ConversationToMessages(conversation1),
 		},
 		instructor.UnionOptions{
 			Discriminator: "type",
@@ -82,9 +82,9 @@ func main() {
 
 	result2, resp2, err := client.CreateChatCompletionUnion(
 		ctx,
-		openaiLib.ChatCompletionRequest{
-			Model:    openaiLib.GPT4oMini,
-			Messages: openai.ConversationToMessages(conversation2),
+		openai.ChatCompletionRequest{
+			Model:    openai.GPT4oMini,
+			Messages: instructor_openai.ConversationToMessages(conversation2),
 		},
 		instructor.UnionOptions{
 			Discriminator: "type",
@@ -112,9 +112,9 @@ func main() {
 
 	result3, resp3, err := client.CreateChatCompletionUnion(
 		ctx,
-		openaiLib.ChatCompletionRequest{
-			Model:    openaiLib.GPT4oMini,
-			Messages: openai.ConversationToMessages(conversation3),
+		openai.ChatCompletionRequest{
+			Model:    openai.GPT4oMini,
+			Messages: instructor_openai.ConversationToMessages(conversation3),
 		},
 		instructor.UnionOptions{
 			Discriminator: "type",

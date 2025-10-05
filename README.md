@@ -25,6 +25,8 @@ Import in your code:
 ```go
 import (
 	"github.com/instructor-ai/instructor-go/pkg/instructor"
+	instructor_openai "github.com/instructor-ai/instructor-go/pkg/instructor/providers/openai"
+	"github.com/sashabaranov/go-openai"
 )
 ```
 
@@ -50,7 +52,9 @@ import (
 	"os"
 
 	"github.com/instructor-ai/instructor-go/pkg/instructor"
-	openai "github.com/sashabaranov/go-openai"
+	"github.com/instructor-ai/instructor-go/pkg/instructor/core"
+	instructor_openai "github.com/instructor-ai/instructor-go/pkg/instructor/providers/openai"
+	"github.com/sashabaranov/go-openai"
 )
 
 type Person struct {
@@ -67,17 +71,15 @@ func main() {
 		instructor.WithMaxRetries(3),
 	)
 
+	conversation := core.NewConversation()
+	conversation.AddUserMessage("Extract Robby is 22 years old.")
+
 	var person Person
 	resp, err := client.CreateChatCompletion(
 		ctx,
 		openai.ChatCompletionRequest{
-			Model: openai.GPT4o,
-			Messages: []openai.ChatCompletionMessage{
-				{
-					Role:    openai.ChatMessageRoleUser,
-					Content: "Extract Robby is 22 years old.",
-				},
-			},
+			Model:    openai.GPT4o,
+			Messages: instructor_openai.ConversationToMessages(conversation),
 		},
 		&person,
 	)
@@ -225,8 +227,8 @@ Instructor Go provides a unified conversation history API that works across all 
 ```go
 import (
     "github.com/instructor-ai/instructor-go/pkg/instructor/core"
-    "github.com/instructor-ai/instructor-go/pkg/instructor/providers/openai"
-    openaiLib "github.com/sashabaranov/go-openai"
+    instructor_openai "github.com/instructor-ai/instructor-go/pkg/instructor/providers/openai"
+    "github.com/sashabaranov/go-openai"
 )
 
 // Create a conversation with a system prompt
@@ -241,9 +243,9 @@ conversation.AddUserMessage("What's the weather in SF?")
 // Convert to provider-specific format and use in requests
 resp, err := client.CreateChatCompletion(
     ctx,
-    openaiLib.ChatCompletionRequest{
-        Model:    openaiLib.GPT4,
-        Messages: openai.ConversationToMessages(conversation),
+    openai.ChatCompletionRequest{
+        Model:    openai.GPT4,
+        Messages: instructor_openai.ConversationToMessages(conversation),
     },
     &response,
 )
@@ -276,7 +278,7 @@ imageData, _ := os.ReadFile("image.jpg")
 conversation.AddUserMessageWithImageData("Analyze this", imageData)
 
 // The provider adapter automatically converts to the correct format
-messages := openai.ConversationToMessages(conversation)
+messages := instructor_openai.ConversationToMessages(conversation)
 ```
 
 ### Multi-Provider Support
@@ -284,11 +286,18 @@ messages := openai.ConversationToMessages(conversation)
 The same conversation can be used across different providers using a consistent functional API:
 
 ```go
+import (
+    instructor_openai "github.com/instructor-ai/instructor-go/pkg/instructor/providers/openai"
+    instructor_anthropic "github.com/instructor-ai/instructor-go/pkg/instructor/providers/anthropic"
+    instructor_google "github.com/instructor-ai/instructor-go/pkg/instructor/providers/google"
+    instructor_cohere "github.com/instructor-ai/instructor-go/pkg/instructor/providers/cohere"
+)
+
 // OpenAI
-messages := openai.ConversationToMessages(conversation)
+messages := instructor_openai.ConversationToMessages(conversation)
 
 // Anthropic - returns system prompt and messages
-system, messages := anthropic.ConversationToMessages(conversation)
+system, messages := instructor_anthropic.ConversationToMessages(conversation)
 req := anthropic.MessagesRequest{
     Model:    anthropic.ModelClaude3Haiku20240307,
     System:   system,
@@ -296,10 +305,10 @@ req := anthropic.MessagesRequest{
 }
 
 // Google
-contents := google.ConversationToContents(conversation)
+contents := instructor_google.ConversationToContents(conversation)
 
 // Cohere - returns preamble and chat history
-preamble, chatHistory := cohere.ConversationToMessages(conversation)
+preamble, chatHistory := instructor_cohere.ConversationToMessages(conversation)
 req := cohere.ChatRequest{
     Model:       "command-r-plus",
     Preamble:    &preamble,

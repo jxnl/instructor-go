@@ -61,18 +61,18 @@ conversation.ClearKeepingSystem()
 
 ```go
 import (
-    "github.com/instructor-ai/instructor-go/pkg/instructor/providers/openai"
-    openaiLib "github.com/sashabaranov/go-openai"
+    instructor_openai "github.com/instructor-ai/instructor-go/pkg/instructor/providers/openai"
+    "github.com/sashabaranov/go-openai"
 )
 
 // Convert conversation to OpenAI messages
-messages := openai.ConversationToMessages(conversation)
+messages := instructor_openai.ConversationToMessages(conversation)
 
 // Use in request
 resp, err := client.CreateChatCompletion(
     ctx,
-    openaiLib.ChatCompletionRequest{
-        Model:    openaiLib.GPT4,
+    openai.ChatCompletionRequest{
+        Model:    openai.GPT4,
         Messages: messages,
     },
     &response,
@@ -83,16 +83,16 @@ resp, err := client.CreateChatCompletion(
 
 ```go
 import (
-    "github.com/instructor-ai/instructor-go/pkg/instructor/providers/anthropic"
-    anthropicLib "github.com/liushuangls/go-anthropic/v2"
+    instructor_anthropic "github.com/instructor-ai/instructor-go/pkg/instructor/providers/anthropic"
+    "github.com/liushuangls/go-anthropic/v2"
 )
 
 // Convert conversation to Anthropic format (returns system prompt and messages)
-system, messages := anthropic.ConversationToMessages(conversation)
+system, messages := instructor_anthropic.ConversationToMessages(conversation)
 
 // Create request
-req := anthropicLib.MessagesRequest{
-    Model:     anthropicLib.ModelClaude3Sonnet20240229,
+req := anthropic.MessagesRequest{
+    Model:     anthropic.ModelClaude3Sonnet20240229,
     MaxTokens: 1024,
     System:    system,
     Messages:  messages,
@@ -105,10 +105,10 @@ resp, err := client.CreateMessages(ctx, req, &response)
 ### Google (Gemini)
 
 ```go
-import "github.com/instructor-ai/instructor-go/pkg/instructor/providers/google"
+import instructor_google "github.com/instructor-ai/instructor-go/pkg/instructor/providers/google"
 
 // Convert conversation to Google contents
-contents := google.ConversationToContents(conversation)
+contents := instructor_google.ConversationToContents(conversation)
 
 // Use in request
 resp, err := client.CreateChatCompletion(
@@ -125,15 +125,15 @@ resp, err := client.CreateChatCompletion(
 
 ```go
 import (
-    "github.com/instructor-ai/instructor-go/pkg/instructor/providers/cohere"
-    cohereLib "github.com/cohere-ai/cohere-go/v2"
+    instructor_cohere "github.com/instructor-ai/instructor-go/pkg/instructor/providers/cohere"
+    "github.com/cohere-ai/cohere-go/v2"
 )
 
 // Convert conversation to Cohere format (returns preamble and chat history)
-preamble, chatHistory := cohere.ConversationToMessages(conversation)
+preamble, chatHistory := instructor_cohere.ConversationToMessages(conversation)
 
 // Create request
-req := &cohereLib.ChatRequest{
+req := &cohere.ChatRequest{
     Model:       "command-r-plus",
     Message:     "Latest user message goes here",
     ChatHistory: chatHistory,
@@ -255,7 +255,7 @@ conversation.AddUserMessage("Hello")
 resp, _ := client.CreateChatCompletion(ctx,
     openai.ChatCompletionRequest{
         Model:    openai.GPT4,
-        Messages: openai.ConversationToMessages(conversation),
+        Messages: instructor_openai.ConversationToMessages(conversation),
     },
     &result,
 )

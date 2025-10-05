@@ -7,11 +7,11 @@ import (
 	"os"
 	"strings"
 
-	cohereLib "github.com/cohere-ai/cohere-go/v2"
+	cohere "github.com/cohere-ai/cohere-go/v2"
 	cohereclient "github.com/cohere-ai/cohere-go/v2/client"
 	"github.com/instructor-ai/instructor-go/pkg/instructor"
 	"github.com/instructor-ai/instructor-go/pkg/instructor/core"
-	"github.com/instructor-ai/instructor-go/pkg/instructor/providers/cohere"
+	instructor_cohere "github.com/instructor-ai/instructor-go/pkg/instructor/providers/cohere"
 )
 
 type Section struct {
@@ -70,8 +70,8 @@ Each line of the document is marked with its line number in square brackets (e.g
 `)
 		conversation.AddUserMessage(docWithLines)
 
-		preamble, chatHistory := cohere.ConversationToMessages(conversation)
-		req := &cohereLib.ChatRequest{
+		preamble, chatHistory := instructor_cohere.ConversationToMessages(conversation)
+		req := &cohere.ChatRequest{
 			Model:       toPtr("command-r-plus"),
 			ChatHistory: chatHistory,
 		}

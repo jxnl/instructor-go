@@ -6,8 +6,8 @@ import (
 
 	"github.com/instructor-ai/instructor-go/pkg/instructor"
 	"github.com/instructor-ai/instructor-go/pkg/instructor/core"
-	"github.com/instructor-ai/instructor-go/pkg/instructor/providers/openai"
-	openaiLib "github.com/sashabaranov/go-openai"
+	instructor_openai "github.com/instructor-ai/instructor-go/pkg/instructor/providers/openai"
+	"github.com/sashabaranov/go-openai"
 )
 
 type Character struct {
@@ -33,11 +33,11 @@ Facts:
 func main() {
 	ctx := context.Background()
 
-	config := openaiLib.DefaultConfig("ollama")
+	config := openai.DefaultConfig("ollama")
 	config.BaseURL = "http://localhost:11434/v1"
 
 	client := instructor.FromOpenAI(
-		openaiLib.NewClientWithConfig(config),
+		openai.NewClientWithConfig(config),
 		instructor.WithMode(instructor.ModeJSON),
 		instructor.WithMaxRetries(3),
 	)
@@ -46,9 +46,9 @@ func main() {
 	conversation.AddUserMessage("Tell me about the Hal 9000")
 
 	var character Character
-	_, err := client.CreateChatCompletion(ctx, openaiLib.ChatCompletionRequest{
+	_, err := client.CreateChatCompletion(ctx, openai.ChatCompletionRequest{
 		Model:    "llama3",
-		Messages: openai.ConversationToMessages(conversation),
+		Messages: instructor_openai.ConversationToMessages(conversation),
 	},
 		&character,
 	)

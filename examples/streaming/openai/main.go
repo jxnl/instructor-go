@@ -7,8 +7,8 @@ import (
 
 	"github.com/instructor-ai/instructor-go/pkg/instructor"
 	"github.com/instructor-ai/instructor-go/pkg/instructor/core"
-	"github.com/instructor-ai/instructor-go/pkg/instructor/providers/openai"
-	openaiLib "github.com/sashabaranov/go-openai"
+	instructor_openai "github.com/instructor-ai/instructor-go/pkg/instructor/providers/openai"
+	"github.com/sashabaranov/go-openai"
 )
 
 type Product struct {
@@ -37,7 +37,7 @@ func main() {
 	ctx := context.Background()
 
 	client := instructor.FromOpenAI(
-		openaiLib.NewClient(os.Getenv("OPENAI_API_KEY")),
+		openai.NewClient(os.Getenv("OPENAI_API_KEY")),
 		instructor.WithMode(instructor.ModeJSON),
 	)
 
@@ -80,9 +80,9 @@ Product list:
 %s`, productList))
 	conversation.AddUserMessage(fmt.Sprintf("User profile:\n%s", profileData))
 
-	recommendationChan, err := client.CreateChatCompletionStream(ctx, openaiLib.ChatCompletionRequest{
-		Model:    openaiLib.GPT4o20240513,
-		Messages: openai.ConversationToMessages(conversation),
+	recommendationChan, err := client.CreateChatCompletionStream(ctx, openai.ChatCompletionRequest{
+		Model:    openai.GPT4o20240513,
+		Messages: instructor_openai.ConversationToMessages(conversation),
 		Stream:   true,
 	},
 		*new(Recommendation),

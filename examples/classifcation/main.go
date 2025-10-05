@@ -7,8 +7,8 @@ import (
 
 	"github.com/instructor-ai/instructor-go/pkg/instructor"
 	"github.com/instructor-ai/instructor-go/pkg/instructor/core"
-	"github.com/instructor-ai/instructor-go/pkg/instructor/providers/anthropic"
-	anthropicLib "github.com/liushuangls/go-anthropic/v2"
+	instructor_anthropic "github.com/instructor-ai/instructor-go/pkg/instructor/providers/anthropic"
+	"github.com/liushuangls/go-anthropic/v2"
 )
 
 type LabelType string
@@ -31,7 +31,7 @@ func classify(data string) *Prediction {
 	ctx := context.Background()
 
 	client := instructor.FromAnthropic(
-		anthropicLib.NewClient(os.Getenv("ANTHROPIC_API_KEY")),
+		anthropic.NewClient(os.Getenv("ANTHROPIC_API_KEY")),
 		instructor.WithMode(instructor.ModeToolCall),
 		instructor.WithMaxRetries(3),
 	)
@@ -39,9 +39,9 @@ func classify(data string) *Prediction {
 	conversation := core.NewConversation()
 	conversation.AddUserMessage(fmt.Sprintf("Classify the following support ticket: %s", data))
 
-	system, messages := anthropic.ConversationToMessages(conversation)
-	req := anthropicLib.MessagesRequest{
-		Model:     anthropicLib.ModelClaude3Haiku20240307,
+	system, messages := instructor_anthropic.ConversationToMessages(conversation)
+	req := anthropic.MessagesRequest{
+		Model:     anthropic.ModelClaude3Haiku20240307,
 		MaxTokens: 500,
 		System:    system,
 		Messages:  messages,

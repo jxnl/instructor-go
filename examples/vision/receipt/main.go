@@ -8,8 +8,8 @@ import (
 
 	"github.com/instructor-ai/instructor-go/pkg/instructor"
 	"github.com/instructor-ai/instructor-go/pkg/instructor/core"
-	"github.com/instructor-ai/instructor-go/pkg/instructor/providers/openai"
-	openaiLib "github.com/sashabaranov/go-openai"
+	instructor_openai "github.com/instructor-ai/instructor-go/pkg/instructor/providers/openai"
+	"github.com/sashabaranov/go-openai"
 )
 
 type Item struct {
@@ -58,9 +58,9 @@ func extract(ctx context.Context, client *instructor.InstructorOpenAI, url strin
 	var receipt Receipt
 	_, err := client.CreateChatCompletion(
 		ctx,
-		openaiLib.ChatCompletionRequest{
-			Model:    openaiLib.GPT4o,
-			Messages: openai.ConversationToMessages(conversation),
+		openai.ChatCompletionRequest{
+			Model:    openai.GPT4o,
+			Messages: instructor_openai.ConversationToMessages(conversation),
 		},
 		&receipt,
 	)
@@ -79,7 +79,7 @@ func main() {
 	ctx := context.Background()
 
 	client := instructor.FromOpenAI(
-		openaiLib.NewClient(os.Getenv("OPENAI_API_KEY")),
+		openai.NewClient(os.Getenv("OPENAI_API_KEY")),
 		instructor.WithMode(instructor.ModeJSON),
 		instructor.WithMaxRetries(3),
 	)
