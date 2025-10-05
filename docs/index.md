@@ -7,7 +7,7 @@ _Structured large language model (LLM) extraction in Go, designed for simplicity
 [![Twitter Follow](https://img.shields.io/twitter/follow/jxnlco?style=social)](https://twitter.com/jxnlco)
 [![LinkedIn Follow](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/robby-horvath/)
 [![Documentation](https://img.shields.io/badge/docs-available-brightgreen)](https://go.useinstructor.com)
-[![GitHub issues](https://img.shields.io/github/issues/instructor-ai/instructor-go.svg)](https://github.com/instructor-ai/instructor-go/issues)
+[![GitHub issues](https://img.shields.io/github/issues/567-labs/instructor-go.svg)](https://github.com/567-labs/instructor-go/issues)
 [![Discord](https://img.shields.io/discord/1192334452110659664?label=discord)](https://discord.gg/UD9GPjbs8c)
 
 Check us out in [Python](https://python.useinstructor.com/), [JS/TS](https://js.useinstructor.com/), [Elixir](https://github.com/thmsmlr/instructor_ex/) and [PHP](https://github.com/cognesy/instructor-php/).
@@ -24,7 +24,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/instructor-ai/instructor-go/pkg/instructor"
+	"github.com/567-labs/instructor-go/pkg/instructor"
 	openai "github.com/sashabaranov/go-openai"
 )
 
@@ -74,7 +74,7 @@ Age:  %d
 
 ## Contributing
 
-If you want to help out, checkout some of the issues marked as `good-first-issue` or `help-wanted`. Found [here](https://github.com/instructor-ai/instructor-go/labels/good%20first%20issue). They could be anything from code improvements, a guest blog post, or a new cook book.
+If you want to help out, checkout some of the issues marked as `good-first-issue` or `help-wanted`. Found [here](https://github.com/567-labs/instructor-go/labels/good%20first%20issue). They could be anything from code improvements, a guest blog post, or a new cook book.
 
 ## License
 

@@ -2,7 +2,7 @@ site_name: Instructor (Go)
 site_author: Jason Liu
 site_description: Structured LLM outputs for Go
 repo_name: instructor-go
-repo_url: https://github.com/instructor-ai/instructor-go
+repo_url: https://github.com/567-labs/instructor-go
 site_url: https://go.useinstructor.com/
 edit_uri: edit/main/docs/
 copyright: Copyright &copy; 2024 Jason Liu
@@ -99,7 +99,7 @@ markdown_extensions:
   - pymdownx.magiclink:
       normalize_issue_symbols: true
       repo_url_shorthand: true
-      user: instructor-ai
+      user: 567-labs
       repo: instructor-go
   - pymdownx.mark
   - pymdownx.smartsymbols

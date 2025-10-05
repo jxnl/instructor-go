@@ -3,7 +3,7 @@ package openai
 import (
 	"encoding/base64"
 
-	"github.com/instructor-ai/instructor-go/pkg/instructor/core"
+	"github.com/567-labs/instructor-go/pkg/instructor/core"
 	openai "github.com/sashabaranov/go-openai"
 )
 

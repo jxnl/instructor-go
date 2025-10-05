@@ -1,7 +1,7 @@
 package anthropic
 
 import (
-	"github.com/instructor-ai/instructor-go/pkg/instructor/core"
+	"github.com/567-labs/instructor-go/pkg/instructor/core"
 	anthropic "github.com/liushuangls/go-anthropic/v2"
 )
 
