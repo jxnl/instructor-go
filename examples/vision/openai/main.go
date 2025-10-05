@@ -41,7 +41,7 @@ func main() {
 	url := "https://raw.githubusercontent.com/instructor-ai/instructor-go/main/examples/vision/openai/books.png"
 
 	conversation := core.NewConversation()
-	conversation.AddUserMessageWithImageURLs("Extract book catelog from the image", url)
+	conversation.AddUserMessageWithImageURLs("Extract book catalog from the image", url)
 
 	var bookCatalog BookCatalog
 	_, err := client.CreateChatCompletion(ctx, openai.ChatCompletionRequest{
