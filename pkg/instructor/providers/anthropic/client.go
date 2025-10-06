@@ -13,6 +13,7 @@ type InstructorAnthropic struct {
 	mode       core.Mode
 	maxRetries int
 	validate   bool
+	logger     core.Logger
 }
 
 var _ core.Instructor = &InstructorAnthropic{}
@@ -28,6 +29,7 @@ func FromAnthropic(client *anthropic.Client, opts ...core.Options) *InstructorAn
 		mode:       *options.Mode,
 		maxRetries: *options.MaxRetries,
 		validate:   *options.Validate,
+		logger:     options.Logger,
 	}
 	return i
 }
@@ -46,6 +48,10 @@ func (i *InstructorAnthropic) Mode() core.Mode {
 
 func (i *InstructorAnthropic) Validate() bool {
 	return i.validate
+}
+
+func (i *InstructorAnthropic) Logger() core.Logger {
+	return i.logger
 }
 
 // AppendErrorToRequest implements Anthropic-specific error appending for []MessageContent

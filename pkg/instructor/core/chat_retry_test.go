@@ -113,6 +113,11 @@ func (m *mockInstructor) AppendErrorToRequest(request interface{}, failedRespons
 	return nil // Use default handler
 }
 
+// Logger returns a no-op logger for testing
+func (m *mockInstructor) Logger() Logger {
+	return NewNoopLogger()
+}
+
 type mockResponse struct {
 	InputTokens  int
 	OutputTokens int

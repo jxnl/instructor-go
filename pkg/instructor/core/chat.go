@@ -16,6 +16,14 @@ type UsageSum struct {
 	TotalTokens  int
 }
 
+// truncateString truncates a string to maxLen characters for logging
+func truncateString(s string, maxLen int) string {
+	if len(s) <= maxLen {
+		return s
+	}
+	return s[:maxLen] + "..."
+}
+
 // defaultAppendErrorToRequest is the default implementation for OpenAI-style string content
 // Providers can override this by implementing AppendErrorToRequest
 func defaultAppendErrorToRequest(request interface{}, failedResponse string, errorMessage string) interface{} {
@@ -97,11 +105,21 @@ func defaultAppendErrorToRequest(request interface{}, failedResponse string, err
 func ChatHandler(i Instructor, ctx context.Context, request interface{}, response any) (interface{}, error) {
 
 	var err error
+	logger := i.Logger().With(
+		"provider", i.Provider(),
+		"mode", i.Mode(),
+		"max_retries", i.MaxRetries(),
+	)
+
+	logger.Debug("starting chat handler",
+		"response_type", fmt.Sprintf("%T", response),
+	)
 
 	t := reflect.TypeOf(response)
 
 	schema, err := NewSchema(t)
 	if err != nil {
+		logger.Error("schema creation failed", "error", err)
 		return nil, err
 	}
 
@@ -109,12 +127,25 @@ func ChatHandler(i Instructor, ctx context.Context, request interface{}, respons
 	usage := &UsageSum{}
 
 	for attempt := 0; attempt <= i.MaxRetries(); attempt++ {
+		logger.Debug("starting attempt",
+			"attempt", attempt+1,
+			"max_attempts", i.MaxRetries()+1,
+		)
 
 		text, resp, err := i.InternalChat(ctx, request, schema)
 		if err != nil {
 			// no retry on non-marshalling/validation errors
+			logger.Error("internal chat failed",
+				"attempt", attempt+1,
+				"error", err,
+			)
 			return i.EmptyResponseWithResponseUsage(resp), err
 		}
+
+		logger.Debug("received response",
+			"attempt", attempt+1,
+			"response_length", len(text),
+		)
 
 		text = ExtractJSON(&text)
 
@@ -122,8 +153,18 @@ func ChatHandler(i Instructor, ctx context.Context, request interface{}, respons
 		if err != nil {
 			i.CountUsageFromResponse(resp, usage)
 
+			logger.Warn("json unmarshaling failed",
+				"attempt", attempt+1,
+				"error", err,
+				"response_preview", truncateString(text, 200),
+			)
+
 			// If we have more retries left, send back the error and the malformed JSON
 			if attempt < i.MaxRetries() {
+				logger.Info("retrying after json error",
+					"attempt", attempt+1,
+					"next_attempt", attempt+2,
+				)
 				errorMessage := fmt.Sprintf("JSON parsing failed: %s. Fix the syntax and retry.", err.Error())
 				// Try provider-specific handler first, fall back to default
 				if customRequest := i.AppendErrorToRequest(request, text, errorMessage); customRequest != nil {
@@ -131,9 +172,19 @@ func ChatHandler(i Instructor, ctx context.Context, request interface{}, respons
 				} else {
 					request = defaultAppendErrorToRequest(request, text, errorMessage)
 				}
+			} else {
+				logger.Error("max retries reached after json errors",
+					"total_attempts", attempt+1,
+					"total_input_tokens", usage.InputTokens,
+					"total_output_tokens", usage.OutputTokens,
+				)
 			}
 			continue
 		}
+
+		logger.Debug("json unmarshaling succeeded",
+			"attempt", attempt+1,
+		)
 
 		if i.Validate() {
 			validate = validator.New()
@@ -143,8 +194,17 @@ func ChatHandler(i Instructor, ctx context.Context, request interface{}, respons
 			if err != nil {
 				i.CountUsageFromResponse(resp, usage)
 
+				logger.Warn("validation failed",
+					"attempt", attempt+1,
+					"error", err,
+				)
+
 				// If we have more retries left, send back the validation error
 				if attempt < i.MaxRetries() {
+					logger.Info("retrying after validation error",
+						"attempt", attempt+1,
+						"next_attempt", attempt+2,
+					)
 					errorMessage := fmt.Sprintf("Validation failed: %s. Fix the values and retry.", err.Error())
 					// Try provider-specific handler first, fall back to default
 					if customRequest := i.AppendErrorToRequest(request, text, errorMessage); customRequest != nil {
@@ -152,13 +212,31 @@ func ChatHandler(i Instructor, ctx context.Context, request interface{}, respons
 					} else {
 						request = defaultAppendErrorToRequest(request, text, errorMessage)
 					}
+				} else {
+					logger.Error("max retries reached after validation errors",
+						"total_attempts", attempt+1,
+						"total_input_tokens", usage.InputTokens,
+						"total_output_tokens", usage.OutputTokens,
+					)
 				}
 				continue
 			}
 		}
 
+		logger.Info("chat handler succeeded",
+			"total_attempts", attempt+1,
+			"total_input_tokens", usage.InputTokens,
+			"total_output_tokens", usage.OutputTokens,
+		)
+
 		return i.AddUsageSumToResponse(resp, usage)
 	}
+
+	logger.Error("max retry attempts exceeded",
+		"total_attempts", i.MaxRetries()+1,
+		"total_input_tokens", usage.InputTokens,
+		"total_output_tokens", usage.OutputTokens,
+	)
 
 	return i.EmptyResponseWithUsageSum(usage), errors.New("hit max retry attempts")
 }
@@ -166,11 +244,27 @@ func ChatHandler(i Instructor, ctx context.Context, request interface{}, respons
 // ChatHandlerUnion handles chat completion with union type extraction
 func ChatHandlerUnion(i Instructor, ctx context.Context, request interface{}, opts UnionOptions) (any, interface{}, error) {
 
+	logger := i.Logger().With(
+		"provider", i.Provider(),
+		"mode", i.Mode(),
+		"max_retries", i.MaxRetries(),
+		"discriminator", opts.Discriminator,
+	)
+
+	logger.Debug("starting chat handler union",
+		"variant_count", len(opts.Variants),
+	)
+
 	// Create union schema from options
 	unionSchema, err := NewUnionSchema(opts.Discriminator, opts.Variants...)
 	if err != nil {
+		logger.Error("union schema creation failed", "error", err)
 		return nil, nil, fmt.Errorf("failed to create union schema: %w", err)
 	}
+
+	logger.Debug("union schema created",
+		"valid_values", unionSchema.ValidValues(),
+	)
 
 	// Convert union schema to regular schema for InternalChat
 	schema := &Schema{
@@ -181,6 +275,7 @@ func ChatHandlerUnion(i Instructor, ctx context.Context, request interface{}, op
 	// Serialize schema for String field (used in some modes)
 	schemaBytes, err := json.MarshalIndent(unionSchema.Schema, "", "  ")
 	if err != nil {
+		logger.Error("schema marshaling failed", "error", err)
 		return nil, nil, fmt.Errorf("failed to marshal union schema: %w", err)
 	}
 	schema.String = string(schemaBytes)
@@ -189,12 +284,25 @@ func ChatHandlerUnion(i Instructor, ctx context.Context, request interface{}, op
 	usage := &UsageSum{}
 
 	for attempt := 0; attempt <= i.MaxRetries(); attempt++ {
+		logger.Debug("starting union attempt",
+			"attempt", attempt+1,
+			"max_attempts", i.MaxRetries()+1,
+		)
 
 		text, resp, err := i.InternalChat(ctx, request, schema)
 		if err != nil {
 			// no retry on non-marshalling/validation errors
+			logger.Error("internal chat failed",
+				"attempt", attempt+1,
+				"error", err,
+			)
 			return nil, i.EmptyResponseWithResponseUsage(resp), err
 		}
+
+		logger.Debug("received union response",
+			"attempt", attempt+1,
+			"response_length", len(text),
+		)
 
 		text = ExtractJSON(&text)
 
@@ -203,8 +311,19 @@ func ChatHandlerUnion(i Instructor, ctx context.Context, request interface{}, op
 		if err != nil {
 			i.CountUsageFromResponse(resp, usage)
 
+			logger.Warn("union type unmarshaling failed",
+				"attempt", attempt+1,
+				"error", err,
+				"response_preview", truncateString(text, 200),
+				"valid_discriminator_values", unionSchema.ValidValues(),
+			)
+
 			// If we have more retries left, send back the error and the malformed JSON
 			if attempt < i.MaxRetries() {
+				logger.Info("retrying after union type error",
+					"attempt", attempt+1,
+					"next_attempt", attempt+2,
+				)
 				errorMessage := fmt.Sprintf("Union type error: %s. Ensure response matches one of the expected variants.", err.Error())
 				// Try provider-specific handler first, fall back to default
 				if customRequest := i.AppendErrorToRequest(request, text, errorMessage); customRequest != nil {
@@ -212,9 +331,20 @@ func ChatHandlerUnion(i Instructor, ctx context.Context, request interface{}, op
 				} else {
 					request = defaultAppendErrorToRequest(request, text, errorMessage)
 				}
+			} else {
+				logger.Error("max retries reached after union type errors",
+					"total_attempts", attempt+1,
+					"total_input_tokens", usage.InputTokens,
+					"total_output_tokens", usage.OutputTokens,
+				)
 			}
 			continue
 		}
+
+		logger.Debug("union type unmarshaling succeeded",
+			"attempt", attempt+1,
+			"result_type", fmt.Sprintf("%T", result),
+		)
 
 		if i.Validate() {
 			validate = validator.New()
@@ -224,8 +354,18 @@ func ChatHandlerUnion(i Instructor, ctx context.Context, request interface{}, op
 			if err != nil {
 				i.CountUsageFromResponse(resp, usage)
 
+				logger.Warn("union validation failed",
+					"attempt", attempt+1,
+					"error", err,
+					"result_type", fmt.Sprintf("%T", result),
+				)
+
 				// If we have more retries left, send back the validation error
 				if attempt < i.MaxRetries() {
+					logger.Info("retrying after union validation error",
+						"attempt", attempt+1,
+						"next_attempt", attempt+2,
+					)
 					errorMessage := fmt.Sprintf("Validation failed: %s. Fix the values and retry.", err.Error())
 					// Try provider-specific handler first, fall back to default
 					if customRequest := i.AppendErrorToRequest(request, text, errorMessage); customRequest != nil {
@@ -233,15 +373,34 @@ func ChatHandlerUnion(i Instructor, ctx context.Context, request interface{}, op
 					} else {
 						request = defaultAppendErrorToRequest(request, text, errorMessage)
 					}
+				} else {
+					logger.Error("max retries reached after union validation errors",
+						"total_attempts", attempt+1,
+						"total_input_tokens", usage.InputTokens,
+						"total_output_tokens", usage.OutputTokens,
+					)
 				}
 				continue
 			}
 		}
 
+		logger.Info("chat handler union succeeded",
+			"total_attempts", attempt+1,
+			"result_type", fmt.Sprintf("%T", result),
+			"total_input_tokens", usage.InputTokens,
+			"total_output_tokens", usage.OutputTokens,
+		)
+
 		// Add usage and return both result and response
 		respWithUsage, err := i.AddUsageSumToResponse(resp, usage)
 		return result, respWithUsage, err
 	}
+
+	logger.Error("max retry attempts exceeded",
+		"total_attempts", i.MaxRetries()+1,
+		"total_input_tokens", usage.InputTokens,
+		"total_output_tokens", usage.OutputTokens,
+	)
 
 	return nil, i.EmptyResponseWithUsageSum(usage), errors.New("hit max retry attempts")
 }

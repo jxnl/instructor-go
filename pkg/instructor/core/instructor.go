@@ -13,6 +13,7 @@ type Instructor interface {
 	Mode() Mode
 	MaxRetries() int
 	Validate() bool
+	Logger() Logger
 
 	// Chat / Messages
 

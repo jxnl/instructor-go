@@ -101,6 +101,47 @@ Age:  %d
 
 See all examples here [`examples/README.md`](examples/README.md)
 
+## Debugging with Logging
+
+Hit "max retry attempts" errors? Enable debug logging to see exactly what's happening:
+
+```go
+client := instructor.FromOpenAI(
+    openai.NewClient(apiKey),
+    instructor.WithLogging("debug"), // 🔍 See all retry attempts
+)
+```
+
+**Output shows:**
+- Each retry attempt with full context
+- Response previews on failures
+- Token usage across retries
+- Exact JSON/validation errors
+
+**Common formats:**
+```go
+instructor.WithLogging("debug")       // Development - see everything
+instructor.WithLogging("json")        // Production - structured logs
+instructor.WithLogging("json:error")  // Production - only errors
+```
+
+### Advanced Logging
+
+Pass your existing `*slog.Logger` directly:
+
+```go
+import (
+    "log/slog"
+    "github.com/567-labs/instructor-go/pkg/instructor"
+)
+
+// Use your application's existing logger
+client := instructor.FromOpenAI(
+    openai.NewClient(apiKey),
+    instructor.WithLogger(instructor.FromSlog(appLogger)),
+)
+```
+
 ## Union Types
 
 Union types allow LLMs to choose between multiple structured response types, making it easy to build agents that can select from a set of tools or actions. This is essential for creating flexible AI systems.

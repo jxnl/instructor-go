@@ -24,6 +24,7 @@ type (
 	UnionOptions         = core.UnionOptions
 	UnionSchema          = core.UnionSchema
 	UnionValidationError = core.UnionValidationError
+	Logger               = core.Logger
 )
 
 // Re-export provider-specific types for backward compatibility
@@ -70,6 +71,8 @@ var (
 	WithMode       = core.WithMode
 	WithMaxRetries = core.WithMaxRetries
 	WithValidation = core.WithValidation
+	WithLogger     = core.WithLogger
+	WithLogging    = core.WithLogging
 )
 
 // Re-export core functions
@@ -80,6 +83,17 @@ var (
 	ChatHandlerUnion = core.ChatHandlerUnion
 	ExtractJSON      = core.ExtractJSON
 	MergeOptions     = core.MergeOptions
+)
+
+// Re-export logger functions
+var (
+	NewNoopLogger       = core.NewNoopLogger
+	NewLogger           = core.NewLogger
+	NewTextLogger       = core.NewTextLogger
+	NewLoggerFromString = core.NewLoggerFromString
+	FromSlog            = core.FromSlog
+	ContextWithLogger   = core.ContextWithLogger
+	LoggerFromContext   = core.LoggerFromContext
 )
 
 // Re-export generic functions
