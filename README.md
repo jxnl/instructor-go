@@ -373,27 +373,36 @@ conversation.Clear()
 conversation.ClearKeepingSystem()
 ```
 
-### Tool Use and Agent Loops (Anthropic)
+### Tool Use and Agent Loops
 
-When building agents with Anthropic's tool calling, preserve the structured `tool_use` and `tool_result` blocks to prevent infinite loops:
+When building agents with tool calling, the conversation API automatically handles tool results:
 
 ```go
-// Add response with tool_use blocks preserved
-anthropic_provider.AddResponseToConversation(conversation, resp)
+conversation := core.NewConversation("You are helpful")
 
-// Extract tool use ID from response
-var toolUseID string
-for _, c := range resp.Content {
-    if c.Type == anthropic.MessagesContentTypeToolUse {
-        toolUseID = c.ID
-        break
+// Agent loop
+for {
+    resp, err := client.CreateMessages(ctx, anthropic.MessagesRequest{
+        Model:    anthropic.ModelClaude3Haiku20240307,
+        Messages: anthropic_provider.ConversationToMessages(conversation),
+        Tools:    tools,
+    })
+
+    // Check if assistant wants to use a tool
+    if hasToolUse(resp) {
+        result := executeTool(resp)
+        // Automatically detects provider and adds response + tool result
+        conversation.AddResponseWithToolResult(resp, result, false)
+        continue
     }
-}
 
-// Execute tool and link result to tool use
-result := tool.Execute()
-conversation.AddToolResultMessage(toolUseID, result, false)
+    // Final answer received
+    conversation.AddResponse(resp)
+    break
+}
 ```
+
+The API automatically detects the provider from the response type (Anthropic, OpenAI, or Google/Gemini) - no manual configuration needed.
 
 See complete example: [`examples/anthropic_agent/main.go`](examples/anthropic_agent/main.go)
 

@@ -7,6 +7,42 @@ import (
 	anthropic "github.com/liushuangls/go-anthropic/v2"
 )
 
+// ResponseHandler implements core.ResponseHandler for Anthropic
+type ResponseHandler struct{}
+
+// NewResponseHandler creates a new Anthropic response handler
+func NewResponseHandler() *ResponseHandler {
+	return &ResponseHandler{}
+}
+
+// AddResponse implements core.ResponseHandler.AddResponse
+func (h *ResponseHandler) AddResponse(conv *core.Conversation, response any) {
+	resp, ok := response.(anthropic.MessagesResponse)
+	if !ok {
+		// Try pointer type
+		respPtr, ok := response.(*anthropic.MessagesResponse)
+		if !ok {
+			return
+		}
+		resp = *respPtr
+	}
+	AddResponseToConversation(conv, resp)
+}
+
+// AddResponseWithToolResult implements core.ResponseHandler.AddResponseWithToolResult
+func (h *ResponseHandler) AddResponseWithToolResult(conv *core.Conversation, response any, toolResult string, isError bool) {
+	resp, ok := response.(anthropic.MessagesResponse)
+	if !ok {
+		// Try pointer type
+		respPtr, ok := response.(*anthropic.MessagesResponse)
+		if !ok {
+			return
+		}
+		resp = *respPtr
+	}
+	AddResponseAndToolResult(conv, resp, toolResult, isError)
+}
+
 // ToAnthropicMessages converts unified conversation messages to Anthropic format
 // Note: Anthropic handles system messages separately in MessagesRequest.System
 func ToAnthropicMessages(messages []core.Message) (system string, anthropicMessages []anthropic.Message) {
@@ -256,7 +292,7 @@ func ConversationToMessages(conv *core.Conversation) (system string, messages []
 
 // AddResponseToConversation adds an Anthropic response message to the conversation
 // This properly preserves tool_use content blocks for agent loops
-func AddResponseToConversation(conv *core.Conversation, resp anthropic.MessagesResponse) *core.Conversation {
+func AddResponseToConversation(conv *core.Conversation, resp anthropic.MessagesResponse) {
 	// Convert response content to content blocks
 	contentBlocks := make([]core.ContentBlock, 0, len(resp.Content))
 
@@ -288,6 +324,11 @@ func AddResponseToConversation(conv *core.Conversation, resp anthropic.MessagesR
 	if len(contentBlocks) > 0 {
 		conv.AddAssistantMessageWithBlocks(contentBlocks...)
 	}
+}
 
-	return conv
+// AddResponseAndToolResult adds the response to conversation and immediately adds the tool result
+// This ensures the tool result is always correctly linked to the tool use from this response
+func AddResponseAndToolResult(conv *core.Conversation, resp anthropic.MessagesResponse, toolResult string, isError bool) {
+	AddResponseToConversation(conv, resp)
+	conv.AddToolResult(toolResult, isError)
 }

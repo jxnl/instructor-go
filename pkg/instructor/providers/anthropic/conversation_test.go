@@ -419,3 +419,74 @@ func TestAddResponseToConversation(t *testing.T) {
 		t.Errorf("Tool use not preserved correctly")
 	}
 }
+
+func TestAddResponseAndToolResult(t *testing.T) {
+	t.Run("adds response and result in one call", func(t *testing.T) {
+		conv := core.NewConversation()
+		conv.AddUserMessage("Search for Go")
+
+		// Simulate response with tool use
+		text := "Let me search"
+		inputData, _ := json.Marshal(map[string]any{"query": "Go"})
+		resp := anthropic.MessagesResponse{
+			Content: []anthropic.MessageContent{
+				anthropic.NewTextMessageContent(text),
+				anthropic.NewToolUseMessageContent("tool_123", "search", inputData),
+			},
+		}
+
+		// Combined API - adds response and result together
+		AddResponseAndToolResult(conv, resp, "Search results here", false)
+
+		messages := conv.GetMessages()
+		if len(messages) != 3 {
+			t.Fatalf("Expected 3 messages (user, assistant, tool result), got %d", len(messages))
+		}
+
+		// Verify assistant message
+		assistantMsg := messages[1]
+		if assistantMsg.Role != core.RoleAssistant {
+			t.Error("Second message should be assistant")
+		}
+		if len(assistantMsg.ContentBlocks) != 2 {
+			t.Error("Assistant should have text + tool use")
+		}
+
+		// Verify tool result message
+		toolResultMsg := messages[2]
+		if toolResultMsg.Role != core.RoleUser {
+			t.Error("Third message should be user (tool result)")
+		}
+		if len(toolResultMsg.ContentBlocks) != 1 {
+			t.Fatal("Tool result message should have 1 block")
+		}
+		if toolResultMsg.ContentBlocks[0].Type != core.ContentBlockTypeToolResult {
+			t.Error("Should be tool_result type")
+		}
+		if toolResultMsg.ContentBlocks[0].ToolResult.ToolUseID != "tool_123" {
+			t.Error("Tool result should be linked to tool_123")
+		}
+		if toolResultMsg.ContentBlocks[0].ToolResult.Content != "Search results here" {
+			t.Error("Tool result content incorrect")
+		}
+	})
+
+	t.Run("works with error results", func(t *testing.T) {
+		conv := core.NewConversation()
+		inputData, _ := json.Marshal(map[string]any{})
+		resp := anthropic.MessagesResponse{
+			Content: []anthropic.MessageContent{
+				anthropic.NewToolUseMessageContent("tool_err", "test", inputData),
+			},
+		}
+
+		AddResponseAndToolResult(conv, resp, "Error occurred", true)
+
+		messages := conv.GetMessages()
+		toolResult := messages[1].ContentBlocks[0].ToolResult
+
+		if !toolResult.IsError {
+			t.Error("IsError should be true")
+		}
+	})
+}
