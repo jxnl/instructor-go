@@ -373,7 +373,38 @@ conversation.Clear()
 conversation.ClearKeepingSystem()
 ```
 
-See the complete agent example: [`examples/agent/main.go`](examples/agent/main.go)
+### Tool Use and Agent Loops
+
+When building agents with tool calling, the conversation API automatically handles tool results:
+
+```go
+conversation := core.NewConversation("You are helpful")
+
+// Agent loop
+for {
+    resp, err := client.CreateMessages(ctx, anthropic.MessagesRequest{
+        Model:    anthropic.ModelClaude3Haiku20240307,
+        Messages: anthropic_provider.ConversationToMessages(conversation),
+        Tools:    tools,
+    })
+
+    // Check if assistant wants to use a tool
+    if hasToolUse(resp) {
+        result := executeTool(resp)
+        // Automatically detects provider and adds response + tool result
+        conversation.AddResponseWithToolResult(resp, result, false)
+        continue
+    }
+
+    // Final answer received
+    conversation.AddResponse(resp)
+    break
+}
+```
+
+The API automatically detects the provider from the response type (Anthropic, OpenAI, or Google/Gemini) - no manual configuration needed.
+
+See complete example: [`examples/anthropic_agent/main.go`](examples/anthropic_agent/main.go)
 
 ## Providers
 
