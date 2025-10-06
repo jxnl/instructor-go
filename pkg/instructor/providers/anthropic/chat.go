@@ -84,6 +84,8 @@ func (i *InstructorAnthropic) completionToolCall(ctx context.Context, request *a
 		return "", nil, err
 	}
 
+	// Collect all tool use responses
+	var toolInputs []json.RawMessage
 	for _, c := range resp.Content {
 		if c.Type != anthropic.MessagesContentTypeToolUse {
 			// Skip non tool responses
@@ -120,11 +122,26 @@ func (i *InstructorAnthropic) completionToolCall(ctx context.Context, request *a
 			}
 		}
 
-		// TODO: handle more than 1 tool use
-		return string(toolInput), &resp, nil
+		toolInputs = append(toolInputs, toolInput)
 	}
 
-	return "", nilAnthropicRespWithUsage(&resp), errors.New("more than 1 tool response at a time is not implemented")
+	// Handle the case where no tool uses were found
+	if len(toolInputs) == 0 {
+		return "", nilAnthropicRespWithUsage(&resp), errors.New("no tool use found in response")
+	}
+
+	// If there's only one tool use, return it directly
+	if len(toolInputs) == 1 {
+		return string(toolInputs[0]), &resp, nil
+	}
+
+	// If there are multiple tool uses, return them as a JSON array
+	merged, err := json.Marshal(toolInputs)
+	if err != nil {
+		return "", nilAnthropicRespWithUsage(&resp), fmt.Errorf("failed to merge multiple tool responses: %w", err)
+	}
+
+	return string(merged), &resp, nil
 
 }
 
