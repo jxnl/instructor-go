@@ -70,12 +70,18 @@ func TestUnionFlowSimulation(t *testing.T) {
 	t.Logf("Modified arguments: %s", string(modifiedArgs))
 
 	// Step 5: Unmarshal using union schema (what ChatHandlerUnion does)
-	result, err := unionSchema.Unmarshal(modifiedArgs)
+	results, err := unionSchema.Unmarshal(modifiedArgs)
 	if err != nil {
 		t.Fatalf("Unmarshal() error: %v", err)
 	}
 
-	// Step 6: Type switch on result (what user code does)
+	// Step 6: Check we got results
+	if len(results) != 1 {
+		t.Fatalf("expected 1 result, got %d", len(results))
+	}
+
+	// Step 7: Type switch on result (what user code does)
+	result := results[0]
 	t.Logf("\nResult type: %T", result)
 
 	switch tool := result.(type) {
@@ -110,17 +116,21 @@ func TestUnionFlowSimulation(t *testing.T) {
 	argMap2["type"] = functionName2
 	modifiedArgs2, _ := json.Marshal(argMap2)
 
-	result2, err := unionSchema.Unmarshal(modifiedArgs2)
+	results2, err := unionSchema.Unmarshal(modifiedArgs2)
 	if err != nil {
 		t.Fatalf("Unmarshal() error for lookup: %v", err)
 	}
 
-	if lookupTool, ok := result2.(LookupTool); ok {
+	if len(results2) != 1 {
+		t.Fatalf("expected 1 result, got %d", len(results2))
+	}
+
+	if lookupTool, ok := results2[0].(LookupTool); ok {
 		t.Logf("✓ Successfully extracted LookupTool:")
 		t.Logf("  Type: %s", lookupTool.Type)
 		t.Logf("  Keyword: %s", lookupTool.Keyword)
 	} else {
-		t.Fatalf("expected LookupTool, got %T", result2)
+		t.Fatalf("expected LookupTool, got %T", results2[0])
 	}
 
 	// Test finish tool
@@ -134,16 +144,20 @@ func TestUnionFlowSimulation(t *testing.T) {
 	argMap3["type"] = functionName3
 	modifiedArgs3, _ := json.Marshal(argMap3)
 
-	result3, err := unionSchema.Unmarshal(modifiedArgs3)
+	results3, err := unionSchema.Unmarshal(modifiedArgs3)
 	if err != nil {
 		t.Fatalf("Unmarshal() error for finish: %v", err)
 	}
 
-	if finishTool, ok := result3.(FinishTool); ok {
+	if len(results3) != 1 {
+		t.Fatalf("expected 1 result, got %d", len(results3))
+	}
+
+	if finishTool, ok := results3[0].(FinishTool); ok {
 		t.Logf("✓ Successfully extracted FinishTool:")
 		t.Logf("  Type: %s", finishTool.Type)
 		t.Logf("  Answer: %s", finishTool.Answer)
 	} else {
-		t.Fatalf("expected FinishTool, got %T", result3)
+		t.Fatalf("expected FinishTool, got %T", results3[0])
 	}
 }

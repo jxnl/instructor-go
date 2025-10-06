@@ -29,12 +29,13 @@ func (i *InstructorCohere) Chat(
 }
 
 // ChatUnion handles chat with union type extraction
+// Always returns []any containing one or more variant instances
 func (i *InstructorCohere) ChatUnion(
 	ctx context.Context,
 	request *cohere.ChatRequest,
 	opts core.UnionOptions,
 	cohereOpts ...option.RequestOption,
-) (result any, response *cohere.NonStreamedChatResponse, err error) {
+) (result []any, response *cohere.NonStreamedChatResponse, err error) {
 
 	result, resp, err := core.ChatHandlerUnion(i, ctx, request, opts)
 	if err != nil {

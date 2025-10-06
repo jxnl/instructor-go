@@ -39,11 +39,12 @@ func (i *InstructorOpenAI) CreateChatCompletion(
 }
 
 // CreateChatCompletionUnion handles chat completion with union type extraction
+// Always returns []any containing one or more variant instances
 func (i *InstructorOpenAI) CreateChatCompletionUnion(
 	ctx context.Context,
 	request openai.ChatCompletionRequest,
 	opts core.UnionOptions,
-) (result any, response openai.ChatCompletionResponse, err error) {
+) (result []any, response openai.ChatCompletionResponse, err error) {
 
 	result, resp, err := core.ChatHandlerUnion(i, ctx, request, opts)
 	if err != nil {
@@ -109,16 +110,12 @@ func (i *InstructorOpenAI) chatToolCall(ctx context.Context, request *openai.Cha
 		return "", nilOpenaiRespWithUsage(&resp), errors.New("received no tool calls from model, expected at least 1")
 	}
 
-	if numTools == 1 {
-		// For union types with multiple functions, inject the function name into the arguments
-		args := toolCalls[0].Function.Arguments
-		funcName := toolCalls[0].Function.Name
-
+	// Helper to inject discriminator for union types
+	injectDiscriminator := func(argsJSON string, funcName string) string {
 		// If we have multiple functions in schema, this might be a union type
-		// Inject the function name as a field if the JSON doesn't already have it
 		if len(schema.Functions) > 1 {
 			var argMap map[string]any
-			if err := json.Unmarshal([]byte(args), &argMap); err == nil {
+			if err := json.Unmarshal([]byte(argsJSON), &argMap); err == nil {
 				// Try to find a discriminator field by checking if function name matches a field value
 				hasDiscriminator := false
 				for _, v := range argMap {
@@ -133,22 +130,28 @@ func (i *InstructorOpenAI) chatToolCall(ctx context.Context, request *openai.Cha
 					argMap["type"] = funcName
 					modifiedArgs, err := json.Marshal(argMap)
 					if err == nil {
-						args = string(modifiedArgs)
+						return string(modifiedArgs)
 					}
 				}
 			}
 		}
+		return argsJSON
+	}
 
+	if numTools == 1 {
+		args := injectDiscriminator(toolCalls[0].Function.Arguments, toolCalls[0].Function.Name)
 		return args, &resp, nil
 	}
 
-	// numTools >= 1
-
+	// Multiple tools - inject discriminator for each
 	jsonArray := make([]map[string]interface{}, len(toolCalls))
 
 	for i, toolCall := range toolCalls {
+		// Inject discriminator into arguments
+		argsWithDiscriminator := injectDiscriminator(toolCall.Function.Arguments, toolCall.Function.Name)
+
 		var jsonObj map[string]interface{}
-		err = json.Unmarshal([]byte(toolCall.Function.Arguments), &jsonObj)
+		err = json.Unmarshal([]byte(argsWithDiscriminator), &jsonObj)
 		if err != nil {
 			return "", nilOpenaiRespWithUsage(&resp), err
 		}

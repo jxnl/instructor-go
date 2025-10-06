@@ -64,12 +64,14 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Printf("Result type: %T\n", result1)
-	if email, ok := result1.(EmailNotification); ok {
-		fmt.Printf("Email notification:\n")
-		fmt.Printf("  To: %s\n", email.To)
-		fmt.Printf("  Subject: %s\n", email.Subject)
-		fmt.Printf("  Body: %s\n", email.Body)
+	fmt.Printf("Received %d notification(s):\n", len(result1))
+	for i, item := range result1 {
+		if email, ok := item.(EmailNotification); ok {
+			fmt.Printf("  [%d] Email notification:\n", i+1)
+			fmt.Printf("      To: %s\n", email.To)
+			fmt.Printf("      Subject: %s\n", email.Subject)
+			fmt.Printf("      Body: %s\n", email.Body)
+		}
 	}
 	fmt.Printf("Tokens: %d\n", resp1.Usage.TotalTokens)
 
@@ -95,11 +97,13 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Printf("Result type: %T\n", result2)
-	if sms, ok := result2.(SMSNotification); ok {
-		fmt.Printf("SMS notification:\n")
-		fmt.Printf("  Phone: %s\n", sms.Phone)
-		fmt.Printf("  Message: %s\n", sms.Message)
+	fmt.Printf("Received %d notification(s):\n", len(result2))
+	for i, item := range result2 {
+		if sms, ok := item.(SMSNotification); ok {
+			fmt.Printf("  [%d] SMS notification:\n", i+1)
+			fmt.Printf("      Phone: %s\n", sms.Phone)
+			fmt.Printf("      Message: %s\n", sms.Message)
+		}
 	}
 	fmt.Printf("Tokens: %d\n", resp2.Usage.TotalTokens)
 
@@ -125,13 +129,17 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Printf("Result type: %T\n", result3)
-	if push, ok := result3.(PushNotification); ok {
-		fmt.Printf("Push notification:\n")
-		fmt.Printf("  Title: %s\n", push.Title)
-		fmt.Printf("  Body: %s\n", push.Body)
+	fmt.Printf("Received %d notification(s):\n", len(result3))
+	for i, item := range result3 {
+		if push, ok := item.(PushNotification); ok {
+			fmt.Printf("  [%d] Push notification:\n", i+1)
+			fmt.Printf("      Title: %s\n", push.Title)
+			fmt.Printf("      Body: %s\n", push.Body)
+		}
 	}
 	fmt.Printf("Tokens: %d\n", resp3.Usage.TotalTokens)
 
 	fmt.Println("\nAll examples completed successfully!")
+	fmt.Println("\nNote: Results are always returned as a slice, containing one or more notifications")
+	fmt.Println("depending on how many parallel tool calls the LLM makes.")
 }
