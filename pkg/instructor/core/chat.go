@@ -16,6 +16,84 @@ type UsageSum struct {
 	TotalTokens  int
 }
 
+// appendErrorToRequest adds an assistant message with the failed response and a user message with the error
+// This provides context to the model for retry attempts
+func appendErrorToRequest(request interface{}, failedResponse string, errorMessage string) interface{} {
+	// Try to extract messages using reflection
+	v := reflect.ValueOf(request)
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+
+	// Look for a Messages field
+	messagesField := v.FieldByName("Messages")
+	if !messagesField.IsValid() {
+		// If we can't find Messages field, return original request
+		return request
+	}
+
+	// Check if Messages is a slice
+	if messagesField.Kind() != reflect.Slice {
+		return request
+	}
+
+	// Get the element type of the slice
+	messageType := messagesField.Type().Elem()
+
+	// Create new assistant message with the failed response
+	assistantMsg := reflect.New(messageType).Elem()
+
+	// Set Role field
+	roleField := assistantMsg.FieldByName("Role")
+	if roleField.IsValid() && roleField.CanSet() {
+		if roleField.Kind() == reflect.String {
+			roleField.SetString("assistant")
+		}
+	}
+
+	// Set Content field
+	contentField := assistantMsg.FieldByName("Content")
+	if contentField.IsValid() && contentField.CanSet() {
+		if contentField.Kind() == reflect.String {
+			contentField.SetString(failedResponse)
+		}
+	}
+
+	// Create new user message with the error
+	userMsg := reflect.New(messageType).Elem()
+
+	// Set Role field
+	roleField = userMsg.FieldByName("Role")
+	if roleField.IsValid() && roleField.CanSet() {
+		if roleField.Kind() == reflect.String {
+			roleField.SetString("user")
+		}
+	}
+
+	// Set Content field
+	contentField = userMsg.FieldByName("Content")
+	if contentField.IsValid() && contentField.CanSet() {
+		if contentField.Kind() == reflect.String {
+			contentField.SetString(errorMessage)
+		}
+	}
+
+	// Append the messages
+	newMessages := reflect.Append(messagesField, assistantMsg)
+	newMessages = reflect.Append(newMessages, userMsg)
+
+	// Create a copy of the request with the new messages
+	newRequest := reflect.New(v.Type()).Elem()
+	newRequest.Set(v)
+	newRequest.FieldByName("Messages").Set(newMessages)
+
+	// Return as interface - if original was pointer, return pointer
+	if reflect.ValueOf(request).Kind() == reflect.Ptr {
+		return newRequest.Addr().Interface()
+	}
+	return newRequest.Interface()
+}
+
 func ChatHandler(i Instructor, ctx context.Context, request interface{}, response any) (interface{}, error) {
 
 	var err error
@@ -42,13 +120,13 @@ func ChatHandler(i Instructor, ctx context.Context, request interface{}, respons
 
 		err = json.Unmarshal([]byte(text), &response)
 		if err != nil {
-			// TODO:
-			// add more sophisticated retry logic (send back json and parse error for model to fix).
-			//
-			// Currently, its just recalling with no new information
-			// or attempt to fix the error with the last generated JSON
-
 			i.CountUsageFromResponse(resp, usage)
+
+			// If we have more retries left, send back the error and the malformed JSON
+			if attempt < i.MaxRetries() {
+				errorMessage := fmt.Sprintf("JSON parsing failed: %s. Fix the syntax and retry.", err.Error())
+				request = appendErrorToRequest(request, text, errorMessage)
+			}
 			continue
 		}
 
@@ -58,10 +136,13 @@ func ChatHandler(i Instructor, ctx context.Context, request interface{}, respons
 			err = validate.Struct(response)
 
 			if err != nil {
-				// TODO:
-				// add more sophisticated retry logic (send back validator error and parse error for model to fix).
-
 				i.CountUsageFromResponse(resp, usage)
+
+				// If we have more retries left, send back the validation error
+				if attempt < i.MaxRetries() {
+					errorMessage := fmt.Sprintf("Validation failed: %s. Fix the values and retry.", err.Error())
+					request = appendErrorToRequest(request, text, errorMessage)
+				}
 				continue
 			}
 		}
@@ -110,8 +191,13 @@ func ChatHandlerUnion(i Instructor, ctx context.Context, request interface{}, op
 		// Use union schema to unmarshal into correct variant
 		result, err := unionSchema.Unmarshal([]byte(text))
 		if err != nil {
-			// Retry on union validation/unmarshal errors
 			i.CountUsageFromResponse(resp, usage)
+
+			// If we have more retries left, send back the error and the malformed JSON
+			if attempt < i.MaxRetries() {
+				errorMessage := fmt.Sprintf("Union type error: %s. Ensure response matches one of the expected variants.", err.Error())
+				request = appendErrorToRequest(request, text, errorMessage)
+			}
 			continue
 		}
 
@@ -122,6 +208,12 @@ func ChatHandlerUnion(i Instructor, ctx context.Context, request interface{}, op
 
 			if err != nil {
 				i.CountUsageFromResponse(resp, usage)
+
+				// If we have more retries left, send back the validation error
+				if attempt < i.MaxRetries() {
+					errorMessage := fmt.Sprintf("Validation failed: %s. Fix the values and retry.", err.Error())
+					request = appendErrorToRequest(request, text, errorMessage)
+				}
 				continue
 			}
 		}
