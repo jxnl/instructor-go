@@ -373,7 +373,29 @@ conversation.Clear()
 conversation.ClearKeepingSystem()
 ```
 
-See the complete agent example: [`examples/agent/main.go`](examples/agent/main.go)
+### Tool Use and Agent Loops (Anthropic)
+
+When building agents with Anthropic's tool calling, preserve the structured `tool_use` and `tool_result` blocks to prevent infinite loops:
+
+```go
+// Add response with tool_use blocks preserved
+anthropic_provider.AddResponseToConversation(conversation, resp)
+
+// Extract tool use ID from response
+var toolUseID string
+for _, c := range resp.Content {
+    if c.Type == anthropic.MessagesContentTypeToolUse {
+        toolUseID = c.ID
+        break
+    }
+}
+
+// Execute tool and link result to tool use
+result := tool.Execute()
+conversation.AddToolResultMessage(toolUseID, result, false)
+```
+
+See complete example: [`examples/anthropic_agent/main.go`](examples/anthropic_agent/main.go)
 
 ## Providers
 
