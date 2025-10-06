@@ -169,7 +169,7 @@ func TestUnionSchema_Unmarshal(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := schema.Unmarshal([]byte(tt.json))
+			results, err := schema.Unmarshal([]byte(tt.json))
 
 			if tt.wantErr {
 				if err == nil {
@@ -187,11 +187,17 @@ func TestUnionSchema_Unmarshal(t *testing.T) {
 				return
 			}
 
-			if result == nil {
+			if results == nil {
 				t.Error("Unmarshal() returned nil result")
 				return
 			}
 
+			if len(results) != 1 {
+				t.Errorf("Unmarshal() returned %d results, want 1", len(results))
+				return
+			}
+
+			result := results[0]
 			typeName := getTypeName(result)
 			if typeName != tt.wantType {
 				t.Errorf("Unmarshal() returned type %s, want %s", typeName, tt.wantType)
@@ -219,6 +225,87 @@ func TestUnionSchema_Unmarshal(t *testing.T) {
 				}
 				if v.Answer == "" {
 					t.Error("FinishTool.Answer is empty")
+				}
+			}
+		})
+	}
+}
+
+func TestUnionSchema_UnmarshalArray(t *testing.T) {
+	schema, err := NewUnionSchema("type", SearchTool{}, LookupTool{}, FinishTool{})
+	if err != nil {
+		t.Fatalf("NewUnionSchema() error: %v", err)
+	}
+
+	tests := []struct {
+		name        string
+		json        string
+		wantCount   int
+		wantTypes   []string
+		wantErr     bool
+		errContains string
+	}{
+		{
+			name:      "unmarshal array with multiple tools",
+			json:      `[{"type": "search", "query": "golang"}, {"type": "lookup", "keyword": "interface"}, {"type": "finish", "answer": "done"}]`,
+			wantCount: 3,
+			wantTypes: []string{"SearchTool", "LookupTool", "FinishTool"},
+			wantErr:   false,
+		},
+		{
+			name:      "unmarshal array with single tool",
+			json:      `[{"type": "search", "query": "golang"}]`,
+			wantCount: 1,
+			wantTypes: []string{"SearchTool"},
+			wantErr:   false,
+		},
+		{
+			name:      "unmarshal empty array",
+			json:      `[]`,
+			wantCount: 0,
+			wantTypes: []string{},
+			wantErr:   false,
+		},
+		{
+			name:        "unmarshal array with invalid tool",
+			json:        `[{"type": "search", "query": "golang"}, {"type": "invalid", "data": "test"}]`,
+			wantErr:     true,
+			errContains: "unknown discriminator value",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			results, err := schema.Unmarshal([]byte(tt.json))
+
+			if tt.wantErr {
+				if err == nil {
+					t.Errorf("Unmarshal() expected error containing %q, got nil", tt.errContains)
+					return
+				}
+				if tt.errContains != "" && !contains(err.Error(), tt.errContains) {
+					t.Errorf("Unmarshal() error = %q, want error containing %q", err.Error(), tt.errContains)
+				}
+				return
+			}
+
+			if err != nil {
+				t.Errorf("Unmarshal() unexpected error: %v", err)
+				return
+			}
+
+			if len(results) != tt.wantCount {
+				t.Errorf("Unmarshal() returned %d results, want %d", len(results), tt.wantCount)
+			}
+
+			// Check each result type
+			for i, res := range results {
+				if i >= len(tt.wantTypes) {
+					break
+				}
+				typeName := getTypeName(res)
+				if typeName != tt.wantTypes[i] {
+					t.Errorf("result[%d] type = %s, want %s", i, typeName, tt.wantTypes[i])
 				}
 			}
 		})

@@ -27,11 +27,12 @@ func (i *InstructorGoogle) CreateChatCompletion(
 }
 
 // CreateChatCompletionUnion handles chat completion with union type extraction
+// Always returns []any containing one or more variant instances
 func (i *InstructorGoogle) CreateChatCompletionUnion(
 	ctx context.Context,
 	request GoogleRequest,
 	opts core.UnionOptions,
-) (result any, response GoogleResponse, err error) {
+) (result []any, response GoogleResponse, err error) {
 
 	result, resp, err := core.ChatHandlerUnion(i, ctx, request, opts)
 	if err != nil {
@@ -97,14 +98,10 @@ func (i *InstructorGoogle) chatToolCall(ctx context.Context, request *GoogleRequ
 	if numTools < 1 {
 		return "", nilGoogleRespWithUsage(googleResp), errors.New("received no tool calls from model, expected at least 1")
 	}
-	if numTools == 1 {
-		argsJSON, err := json.Marshal(toolCalls[0].Args)
-		if err != nil {
-			return "", nilGoogleRespWithUsage(googleResp), err
-		}
 
-		// For union types with multiple functions, inject the function name as discriminator
-		funcName := toolCalls[0].Name
+	// Helper to inject discriminator for union types
+	injectDiscriminator := func(argsJSON []byte, funcName string) []byte {
+		// If we have multiple functions in schema, this might be a union type
 		if len(schema.Functions) > 1 {
 			var argMap map[string]any
 			if err := json.Unmarshal(argsJSON, &argMap); err == nil {
@@ -122,20 +119,35 @@ func (i *InstructorGoogle) chatToolCall(ctx context.Context, request *GoogleRequ
 					argMap["type"] = funcName
 					modifiedArgs, err := json.Marshal(argMap)
 					if err == nil {
-						argsJSON = modifiedArgs
+						return modifiedArgs
 					}
 				}
 			}
 		}
+		return argsJSON
+	}
 
+	if numTools == 1 {
+		argsJSON, err := json.Marshal(toolCalls[0].Args)
+		if err != nil {
+			return "", nilGoogleRespWithUsage(googleResp), err
+		}
+
+		argsJSON = injectDiscriminator(argsJSON, toolCalls[0].Name)
 		return string(argsJSON), googleResp, nil
 	}
+
+	// Multiple tools - inject discriminator for each
 	jsonArray := make([]map[string]interface{}, len(toolCalls))
 	for i, toolCall := range toolCalls {
 		argsJSON, err := json.Marshal(toolCall.Args)
 		if err != nil {
 			return "", nilGoogleRespWithUsage(googleResp), err
 		}
+
+		// Inject discriminator into arguments
+		argsJSON = injectDiscriminator(argsJSON, toolCall.Name)
+
 		var jsonObj map[string]interface{}
 		err = json.Unmarshal(argsJSON, &jsonObj)
 		if err != nil {

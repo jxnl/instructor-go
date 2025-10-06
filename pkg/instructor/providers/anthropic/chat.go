@@ -26,11 +26,12 @@ func (i *InstructorAnthropic) CreateMessages(ctx context.Context, request anthro
 }
 
 // CreateMessagesUnion handles messages with union type extraction
+// Always returns []any containing one or more variant instances
 func (i *InstructorAnthropic) CreateMessagesUnion(
 	ctx context.Context,
 	request anthropic.MessagesRequest,
 	opts core.UnionOptions,
-) (result any, response anthropic.MessagesResponse, err error) {
+) (result []any, response anthropic.MessagesResponse, err error) {
 
 	result, resp, err := core.ChatHandlerUnion(i, ctx, request, opts)
 	if err != nil {

@@ -242,7 +242,8 @@ func ChatHandler(i Instructor, ctx context.Context, request interface{}, respons
 }
 
 // ChatHandlerUnion handles chat completion with union type extraction
-func ChatHandlerUnion(i Instructor, ctx context.Context, request interface{}, opts UnionOptions) (any, interface{}, error) {
+// Always returns []any containing one or more variant instances
+func ChatHandlerUnion(i Instructor, ctx context.Context, request interface{}, opts UnionOptions) ([]any, interface{}, error) {
 
 	logger := i.Logger().With(
 		"provider", i.Provider(),

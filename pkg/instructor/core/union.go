@@ -1,6 +1,7 @@
 package core
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -202,7 +203,30 @@ func generateUnionSchema(u *UnionSchema) (*jsonschema.Schema, error) {
 }
 
 // Unmarshal unmarshals JSON into the correct variant type
-func (u *UnionSchema) Unmarshal(data []byte) (any, error) {
+// Always returns []any containing one or more variant instances
+// Supports both single objects and arrays of objects from the LLM
+func (u *UnionSchema) Unmarshal(data []byte) ([]any, error) {
+	// First, determine if we have an array or single object
+	data = bytes.TrimSpace(data)
+	if len(data) == 0 {
+		return nil, fmt.Errorf("empty JSON data")
+	}
+
+	// Check if it's an array
+	if data[0] == '[' {
+		return u.unmarshalMany(data)
+	}
+
+	// Single object - wrap in slice
+	result, err := u.unmarshalSingle(data)
+	if err != nil {
+		return nil, err
+	}
+	return []any{result}, nil
+}
+
+// unmarshalSingle unmarshals a single JSON object into the correct variant type
+func (u *UnionSchema) unmarshalSingle(data []byte) (any, error) {
 	// First, peek at the discriminator field
 	var peek map[string]any
 	if err := json.Unmarshal(data, &peek); err != nil {
@@ -252,6 +276,31 @@ func (u *UnionSchema) Unmarshal(data []byte) (any, error) {
 
 	// Return the dereferenced value (not pointer)
 	return reflect.ValueOf(result).Elem().Interface(), nil
+}
+
+// unmarshalMany unmarshals an array of JSON objects into a slice of variant types
+func (u *UnionSchema) unmarshalMany(data []byte) ([]any, error) {
+	// Parse as array of raw JSON objects
+	var rawObjects []json.RawMessage
+	if err := json.Unmarshal(data, &rawObjects); err != nil {
+		return nil, fmt.Errorf("failed to parse JSON array: %w", err)
+	}
+
+	if len(rawObjects) == 0 {
+		return []any{}, nil
+	}
+
+	// Unmarshal each object
+	results := make([]any, 0, len(rawObjects))
+	for i, rawObj := range rawObjects {
+		result, err := u.unmarshalSingle(rawObj)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal array element %d: %w", i, err)
+		}
+		results = append(results, result)
+	}
+
+	return results, nil
 }
 
 // ToFunctionSchema generates function definitions for union (for tool call mode)
