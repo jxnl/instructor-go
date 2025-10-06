@@ -108,6 +108,11 @@ func (m *mockInstructor) CountUsageFromResponse(response interface{}, usage *Usa
 	return usage
 }
 
+// AppendErrorToRequest returns nil to use the default handler
+func (m *mockInstructor) AppendErrorToRequest(request interface{}, failedResponse string, errorMessage string) interface{} {
+	return nil // Use default handler
+}
+
 type mockResponse struct {
 	InputTokens  int
 	OutputTokens int
@@ -436,11 +441,11 @@ func TestAppendErrorToRequest(t *testing.T) {
 	failedResponse := `{"invalid": json}`
 	errorMessage := "This is an error message"
 
-	newRequest := appendErrorToRequest(request, failedResponse, errorMessage)
+	newRequest := defaultAppendErrorToRequest(request, failedResponse, errorMessage)
 
 	newMockReq, ok := newRequest.(mockRequest)
 	if !ok {
-		t.Fatal("appendErrorToRequest did not return mockRequest type")
+		t.Fatal("defaultAppendErrorToRequest did not return mockRequest type")
 	}
 
 	// Should have 3 messages: original + assistant + user error

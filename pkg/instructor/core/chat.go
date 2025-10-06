@@ -16,9 +16,9 @@ type UsageSum struct {
 	TotalTokens  int
 }
 
-// appendErrorToRequest adds an assistant message with the failed response and a user message with the error
-// This provides context to the model for retry attempts
-func appendErrorToRequest(request interface{}, failedResponse string, errorMessage string) interface{} {
+// defaultAppendErrorToRequest is the default implementation for OpenAI-style string content
+// Providers can override this by implementing AppendErrorToRequest
+func defaultAppendErrorToRequest(request interface{}, failedResponse string, errorMessage string) interface{} {
 	// Try to extract messages using reflection
 	v := reflect.ValueOf(request)
 	if v.Kind() == reflect.Ptr {
@@ -51,7 +51,7 @@ func appendErrorToRequest(request interface{}, failedResponse string, errorMessa
 		}
 	}
 
-	// Set Content field
+	// Set Content field (default: string content like OpenAI)
 	contentField := assistantMsg.FieldByName("Content")
 	if contentField.IsValid() && contentField.CanSet() {
 		if contentField.Kind() == reflect.String {
@@ -125,7 +125,12 @@ func ChatHandler(i Instructor, ctx context.Context, request interface{}, respons
 			// If we have more retries left, send back the error and the malformed JSON
 			if attempt < i.MaxRetries() {
 				errorMessage := fmt.Sprintf("JSON parsing failed: %s. Fix the syntax and retry.", err.Error())
-				request = appendErrorToRequest(request, text, errorMessage)
+				// Try provider-specific handler first, fall back to default
+				if customRequest := i.AppendErrorToRequest(request, text, errorMessage); customRequest != nil {
+					request = customRequest
+				} else {
+					request = defaultAppendErrorToRequest(request, text, errorMessage)
+				}
 			}
 			continue
 		}
@@ -141,7 +146,12 @@ func ChatHandler(i Instructor, ctx context.Context, request interface{}, respons
 				// If we have more retries left, send back the validation error
 				if attempt < i.MaxRetries() {
 					errorMessage := fmt.Sprintf("Validation failed: %s. Fix the values and retry.", err.Error())
-					request = appendErrorToRequest(request, text, errorMessage)
+					// Try provider-specific handler first, fall back to default
+					if customRequest := i.AppendErrorToRequest(request, text, errorMessage); customRequest != nil {
+						request = customRequest
+					} else {
+						request = defaultAppendErrorToRequest(request, text, errorMessage)
+					}
 				}
 				continue
 			}
@@ -196,7 +206,12 @@ func ChatHandlerUnion(i Instructor, ctx context.Context, request interface{}, op
 			// If we have more retries left, send back the error and the malformed JSON
 			if attempt < i.MaxRetries() {
 				errorMessage := fmt.Sprintf("Union type error: %s. Ensure response matches one of the expected variants.", err.Error())
-				request = appendErrorToRequest(request, text, errorMessage)
+				// Try provider-specific handler first, fall back to default
+				if customRequest := i.AppendErrorToRequest(request, text, errorMessage); customRequest != nil {
+					request = customRequest
+				} else {
+					request = defaultAppendErrorToRequest(request, text, errorMessage)
+				}
 			}
 			continue
 		}
@@ -212,7 +227,12 @@ func ChatHandlerUnion(i Instructor, ctx context.Context, request interface{}, op
 				// If we have more retries left, send back the validation error
 				if attempt < i.MaxRetries() {
 					errorMessage := fmt.Sprintf("Validation failed: %s. Fix the values and retry.", err.Error())
-					request = appendErrorToRequest(request, text, errorMessage)
+					// Try provider-specific handler first, fall back to default
+					if customRequest := i.AppendErrorToRequest(request, text, errorMessage); customRequest != nil {
+						request = customRequest
+					} else {
+						request = defaultAppendErrorToRequest(request, text, errorMessage)
+					}
 				}
 				continue
 			}

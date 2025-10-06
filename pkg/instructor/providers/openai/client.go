@@ -43,3 +43,8 @@ func (i *InstructorOpenAI) MaxRetries() int {
 func (i *InstructorOpenAI) Validate() bool {
 	return i.validate
 }
+
+// AppendErrorToRequest returns nil to use the default handler
+func (i *InstructorOpenAI) AppendErrorToRequest(request interface{}, failedResponse string, errorMessage string) interface{} {
+	return nil // Use default handler
+}

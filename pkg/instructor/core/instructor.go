@@ -36,4 +36,8 @@ type Instructor interface {
 	EmptyResponseWithResponseUsage(response interface{}) interface{}
 	AddUsageSumToResponse(response interface{}, usage *UsageSum) (interface{}, error)
 	CountUsageFromResponse(response interface{}, usage *UsageSum) *UsageSum
+
+	// Error handling - allows providers to customize how errors are appended to requests
+	// Returns nil if provider doesn't implement custom handling (use default)
+	AppendErrorToRequest(request interface{}, failedResponse string, errorMessage string) interface{}
 }

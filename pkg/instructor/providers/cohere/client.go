@@ -44,3 +44,8 @@ func (i *InstructorCohere) MaxRetries() int {
 func (i *InstructorCohere) Validate() bool {
 	return i.validate
 }
+
+// AppendErrorToRequest returns nil to use the default handler
+func (i *InstructorCohere) AppendErrorToRequest(request interface{}, failedResponse string, errorMessage string) interface{} {
+	return nil // Use default handler
+}
