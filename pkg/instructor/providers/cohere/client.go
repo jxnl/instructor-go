@@ -12,6 +12,7 @@ type InstructorCohere struct {
 	mode       core.Mode
 	maxRetries int
 	validate   bool
+	logger     core.Logger
 }
 
 var _ core.Instructor = &InstructorCohere{}
@@ -26,6 +27,7 @@ func FromCohere(client *cohere.Client, opts ...core.Options) *InstructorCohere {
 		provider:   core.ProviderCohere,
 		mode:       *options.Mode,
 		maxRetries: *options.MaxRetries,
+		logger:     options.Logger,
 	}
 	return i
 }
@@ -43,6 +45,9 @@ func (i *InstructorCohere) MaxRetries() int {
 }
 func (i *InstructorCohere) Validate() bool {
 	return i.validate
+}
+func (i *InstructorCohere) Logger() core.Logger {
+	return i.logger
 }
 
 // AppendErrorToRequest returns nil to use the default handler

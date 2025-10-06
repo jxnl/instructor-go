@@ -12,6 +12,7 @@ type InstructorGoogle struct {
 	mode       core.Mode
 	maxRetries int
 	validate   bool
+	logger     core.Logger
 }
 
 func FromGoogle(client *genai.Client, opts ...core.Options) *InstructorGoogle {
@@ -24,6 +25,7 @@ func FromGoogle(client *genai.Client, opts ...core.Options) *InstructorGoogle {
 		mode:       *options.Mode,
 		maxRetries: *options.MaxRetries,
 		validate:   *options.Validate,
+		logger:     options.Logger,
 	}
 	return i
 }
@@ -42,6 +44,10 @@ func (i *InstructorGoogle) MaxRetries() int {
 
 func (i *InstructorGoogle) Validate() bool {
 	return i.validate
+}
+
+func (i *InstructorGoogle) Logger() core.Logger {
+	return i.logger
 }
 
 // AppendErrorToRequest returns nil to use the default handler

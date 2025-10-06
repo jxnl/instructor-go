@@ -12,6 +12,7 @@ type InstructorOpenAI struct {
 	mode       core.Mode
 	maxRetries int
 	validate   bool
+	logger     core.Logger
 }
 
 var _ core.Instructor = &InstructorOpenAI{}
@@ -27,6 +28,7 @@ func FromOpenAI(client *openai.Client, opts ...core.Options) *InstructorOpenAI {
 		mode:       *options.Mode,
 		maxRetries: *options.MaxRetries,
 		validate:   *options.Validate,
+		logger:     options.Logger,
 	}
 	return i
 }
@@ -42,6 +44,9 @@ func (i *InstructorOpenAI) MaxRetries() int {
 }
 func (i *InstructorOpenAI) Validate() bool {
 	return i.validate
+}
+func (i *InstructorOpenAI) Logger() core.Logger {
+	return i.logger
 }
 
 // AppendErrorToRequest returns nil to use the default handler
