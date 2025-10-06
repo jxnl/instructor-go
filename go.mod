@@ -1,6 +1,6 @@
 module github.com/567-labs/instructor-go
 
-go 1.23.0
+go 1.24.0
 
 require (
 	github.com/cohere-ai/cohere-go/v2 v2.15.3

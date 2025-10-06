@@ -44,6 +44,11 @@ func (i *InstructorGoogle) Validate() bool {
 	return i.validate
 }
 
+// AppendErrorToRequest returns nil to use the default handler
+func (i *InstructorGoogle) AppendErrorToRequest(request interface{}, failedResponse string, errorMessage string) interface{} {
+	return nil // Use default handler
+}
+
 // GoogleRequest represents a request to the Google AI API
 type GoogleRequest struct {
 	Model            string                  `json:"model"`
