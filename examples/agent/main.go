@@ -53,12 +53,14 @@ func NewAgent(client *instructor.InstructorOpenAI) *Agent {
 	return &Agent{
 		client: client,
 		conversation: core.NewConversation(`You are a helpful agent that can use tools to answer questions.
+
 Available tools:
 - search: Search for information
 - lookup: Look up detailed information about a specific keyword
 - finish: Return the final answer
 
-Use the tools step by step to gather information before finishing with your answer.`),
+IMPORTANT: You MUST always respond by calling one of these tools. Never respond with plain text.
+Use the tools step by step to gather information, then call "finish" with your final answer.`),
 	}
 }
 
@@ -71,15 +73,16 @@ func (a *Agent) Run(ctx context.Context, goal string) (string, error) {
 		fmt.Printf("\n--- Turn %d ---\n", turn+1)
 
 		// Let the LLM choose a tool
-		action, resp, err := a.client.CreateChatCompletionUnion(
+		actions, resp, err := a.client.CreateChatCompletionUnion(
 			ctx,
 			openai.ChatCompletionRequest{
 				Model:    openai.GPT5Mini,
 				Messages: instructor_openai.ConversationToMessages(a.conversation),
 			},
 			instructor.UnionOptions{
-				Discriminator: "type",
-				Variants:      []any{SearchTool{}, LookupTool{}, FinishTool{}},
+				Discriminator:   "type",
+				Variants:        []any{SearchTool{}, LookupTool{}, FinishTool{}},
+				RequireToolCall: true, // Prevent plain text responses - model must always call a tool
 			},
 		)
 		if err != nil {
@@ -92,6 +95,13 @@ func (a *Agent) Run(ctx context.Context, goal string) (string, error) {
 			resp.Usage.PromptTokens,
 			resp.Usage.CompletionTokens,
 		)
+
+		// For this simple agent, we expect only one action per turn
+		if len(actions) == 0 {
+			return "", fmt.Errorf("no action returned from LLM")
+		}
+
+		action := actions[0]
 
 		// Execute the tool based on its type
 		var result string

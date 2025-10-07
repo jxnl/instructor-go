@@ -328,6 +328,117 @@ func TestOpenAIConversationRoundTrip(t *testing.T) {
 		if len(messages) != 3 {
 			t.Errorf("Expected 3 messages, got %d", len(messages))
 		}
+
+		// Verify assistant message with tool call
+		if messages[1].Role != "assistant" {
+			t.Errorf("Message 1 role = %q, want 'assistant'", messages[1].Role)
+		}
+		if len(messages[1].ToolCalls) != 1 {
+			t.Fatalf("Expected 1 tool call, got %d", len(messages[1].ToolCalls))
+		}
+		if messages[1].ToolCalls[0].ID != "call_123" {
+			t.Errorf("Tool call ID = %q, want 'call_123'", messages[1].ToolCalls[0].ID)
+		}
+		if messages[1].ToolCalls[0].Function.Name != "search" {
+			t.Errorf("Tool name = %q, want 'search'", messages[1].ToolCalls[0].Function.Name)
+		}
+
+		// Verify tool result message
+		if messages[2].Role != "tool" {
+			t.Errorf("Message 2 role = %q, want 'tool'", messages[2].Role)
+		}
+		if messages[2].ToolCallID != "call_123" {
+			t.Errorf("Tool call ID = %q, want 'call_123'", messages[2].ToolCallID)
+		}
+		if messages[2].Content != "Results here" {
+			t.Errorf("Tool result content = %q, want 'Results here'", messages[2].Content)
+		}
+	})
+
+	t.Run("tool result conversion with proper role and ID", func(t *testing.T) {
+		conv := core.NewConversation()
+		conv.AddUserMessage("Test")
+		conv.AddAssistantMessageWithToolUse("",
+			core.ToolUseBlock{
+				ID:    "call_abc123",
+				Name:  "test_tool",
+				Input: []byte(`{}`),
+			},
+		)
+		conv.AddToolResultMessage("call_abc123", "Tool output", false)
+
+		messages := ConversationToMessages(conv)
+
+		// Find the tool result message
+		var toolResultMsg *openai.ChatCompletionMessage
+		for i, msg := range messages {
+			if msg.Role == "tool" {
+				toolResultMsg = &messages[i]
+				break
+			}
+		}
+
+		if toolResultMsg == nil {
+			t.Fatal("No tool result message found")
+		}
+
+		if toolResultMsg.Role != "tool" {
+			t.Errorf("Role = %q, want 'tool'", toolResultMsg.Role)
+		}
+		if toolResultMsg.ToolCallID != "call_abc123" {
+			t.Errorf("ToolCallID = %q, want 'call_abc123'", toolResultMsg.ToolCallID)
+		}
+		if toolResultMsg.Content != "Tool output" {
+			t.Errorf("Content = %q, want 'Tool output'", toolResultMsg.Content)
+		}
+	})
+
+	t.Run("multiple tool results in one message", func(t *testing.T) {
+		conv := core.NewConversation()
+		conv.AddUserMessage("Test")
+		conv.AddAssistantMessageWithToolUse("",
+			core.ToolUseBlock{ID: "call_1", Name: "tool1", Input: []byte(`{}`)},
+			core.ToolUseBlock{ID: "call_2", Name: "tool2", Input: []byte(`{}`)},
+		)
+		conv.AddToolResultMessages(
+			core.ToolResultBlock{ToolUseID: "call_1", Content: "Result 1", IsError: false},
+			core.ToolResultBlock{ToolUseID: "call_2", Content: "Result 2", IsError: false},
+		)
+
+		messages := ConversationToMessages(conv)
+
+		// Count tool result messages
+		toolResultCount := 0
+		for _, msg := range messages {
+			if msg.Role == "tool" {
+				toolResultCount++
+			}
+		}
+
+		if toolResultCount != 2 {
+			t.Errorf("Expected 2 tool result messages, got %d", toolResultCount)
+		}
+
+		// Verify both results are present with correct IDs
+		foundCall1 := false
+		foundCall2 := false
+		for _, msg := range messages {
+			if msg.Role == "tool" {
+				if msg.ToolCallID == "call_1" && msg.Content == "Result 1" {
+					foundCall1 = true
+				}
+				if msg.ToolCallID == "call_2" && msg.Content == "Result 2" {
+					foundCall2 = true
+				}
+			}
+		}
+
+		if !foundCall1 {
+			t.Error("Tool result for call_1 not found")
+		}
+		if !foundCall2 {
+			t.Error("Tool result for call_2 not found")
+		}
 	})
 }
 

@@ -12,8 +12,9 @@ import (
 
 // UnionOptions configures union type extraction
 type UnionOptions struct {
-	Discriminator string // Field name used for discrimination (e.g. "type")
-	Variants      []any  // Concrete instances of each variant type
+	Discriminator   string // Field name used for discrimination (e.g. "type")
+	Variants        []any  // Concrete instances of each variant type
+	RequireToolCall bool   // If true, force the model to always call a tool (prevents plain text responses)
 }
 
 // UnionSchema represents a discriminated union

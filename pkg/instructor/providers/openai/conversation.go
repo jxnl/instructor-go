@@ -45,10 +45,79 @@ func (h *ResponseHandler) AddResponseWithToolResult(conv *core.Conversation, res
 
 // ToOpenAIMessages converts unified conversation messages to OpenAI format
 func ToOpenAIMessages(messages []core.Message) []openai.ChatCompletionMessage {
-	result := make([]openai.ChatCompletionMessage, len(messages))
-	for i, msg := range messages {
-		// If the message has images, use MultiContent
-		if len(msg.Images) > 0 {
+	result := make([]openai.ChatCompletionMessage, 0, len(messages))
+
+	for _, msg := range messages {
+		// If ContentBlocks is set, use structured content (takes precedence)
+		if len(msg.ContentBlocks) > 0 {
+			// Check if this is a tool result message
+			hasToolResult := false
+			for _, block := range msg.ContentBlocks {
+				if block.Type == core.ContentBlockTypeToolResult {
+					hasToolResult = true
+					break
+				}
+			}
+
+			if hasToolResult {
+				// Handle tool result messages - each tool result becomes a separate message
+				for _, block := range msg.ContentBlocks {
+					if block.Type == core.ContentBlockTypeToolResult && block.ToolResult != nil {
+						result = append(result, openai.ChatCompletionMessage{
+							Role:       string(core.RoleTool),
+							Content:    block.ToolResult.Content,
+							ToolCallID: block.ToolResult.ToolUseID,
+						})
+					}
+				}
+			} else {
+				// Handle assistant messages with tool calls
+				openaiMsg := openai.ChatCompletionMessage{
+					Role: string(msg.Role),
+				}
+
+				textContent := ""
+				toolCalls := make([]openai.ToolCall, 0)
+
+				for _, block := range msg.ContentBlocks {
+					switch block.Type {
+					case core.ContentBlockTypeText:
+						textContent += block.Text
+					case core.ContentBlockTypeToolUse:
+						if block.ToolUse != nil {
+							// Convert input to string
+							var argsStr string
+							switch v := block.ToolUse.Input.(type) {
+							case string:
+								argsStr = v
+							case []byte:
+								argsStr = string(v)
+							default:
+								// Already in the right format (json.RawMessage or similar)
+								argsStr = string(v.([]byte))
+							}
+
+							toolCalls = append(toolCalls, openai.ToolCall{
+								ID:   block.ToolUse.ID,
+								Type: openai.ToolTypeFunction,
+								Function: openai.FunctionCall{
+									Name:      block.ToolUse.Name,
+									Arguments: argsStr,
+								},
+							})
+						}
+					}
+				}
+
+				openaiMsg.Content = textContent
+				if len(toolCalls) > 0 {
+					openaiMsg.ToolCalls = toolCalls
+				}
+
+				result = append(result, openaiMsg)
+			}
+		} else if len(msg.Images) > 0 {
+			// If the message has images, use MultiContent
 			parts := make([]openai.ChatMessagePart, 0, len(msg.Images)+1)
 
 			// Add text part if content is not empty
@@ -83,20 +152,20 @@ func ToOpenAIMessages(messages []core.Message) []openai.ChatCompletionMessage {
 				parts = append(parts, imagePart)
 			}
 
-			result[i] = openai.ChatCompletionMessage{
+			result = append(result, openai.ChatCompletionMessage{
 				Role:         string(msg.Role),
 				MultiContent: parts,
 				Name:         msg.Name,
 				ToolCallID:   msg.ToolCallID,
-			}
+			})
 		} else {
 			// Simple text message
-			result[i] = openai.ChatCompletionMessage{
+			result = append(result, openai.ChatCompletionMessage{
 				Role:       string(msg.Role),
 				Content:    msg.Content,
 				Name:       msg.Name,
 				ToolCallID: msg.ToolCallID,
-			}
+			})
 		}
 	}
 	return result
