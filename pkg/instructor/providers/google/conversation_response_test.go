@@ -358,6 +358,125 @@ func TestGoogleConversationRoundTrip(t *testing.T) {
 		if len(contents) != 2 {
 			t.Errorf("Expected 2 contents, got %d", len(contents))
 		}
+
+		// Verify assistant message with function call
+		if contents[1].Role != "model" {
+			t.Errorf("Content 1 role = %q, want 'model'", contents[1].Role)
+		}
+		if len(contents[1].Parts) != 2 { // text + function call
+			t.Fatalf("Expected 2 parts, got %d", len(contents[1].Parts))
+		}
+		if contents[1].Parts[0].Text != "Let me search" {
+			t.Errorf("Part 0 text = %q, want 'Let me search'", contents[1].Parts[0].Text)
+		}
+		if contents[1].Parts[1].FunctionCall == nil {
+			t.Fatal("Part 1 should have FunctionCall")
+		}
+		if contents[1].Parts[1].FunctionCall.Name != "search" {
+			t.Errorf("Function name = %q, want 'search'", contents[1].Parts[1].FunctionCall.Name)
+		}
+	})
+
+	t.Run("conversation with tool result conversion", func(t *testing.T) {
+		conv := core.NewConversation()
+		conv.AddUserMessage("Test")
+		conv.AddAssistantMessageWithToolUse("",
+			core.ToolUseBlock{
+				ID:    "search",
+				Name:  "search",
+				Input: map[string]any{"query": "Go"},
+			},
+		)
+		conv.AddToolResultMessage("search", "Results here", false)
+
+		contents := ConversationToContents(conv)
+
+		// Verify we have 3 contents: user, model (with function call), user (with function response)
+		if len(contents) != 3 {
+			t.Fatalf("Expected 3 contents, got %d", len(contents))
+		}
+
+		// Verify function response content
+		responseContent := contents[2]
+		if responseContent.Role != "user" {
+			t.Errorf("Function response role = %q, want 'user'", responseContent.Role)
+		}
+		if len(responseContent.Parts) != 1 {
+			t.Fatalf("Expected 1 part in response, got %d", len(responseContent.Parts))
+		}
+		if responseContent.Parts[0].FunctionResponse == nil {
+			t.Fatal("Part should have FunctionResponse")
+		}
+		if responseContent.Parts[0].FunctionResponse.Name != "search" {
+			t.Errorf("Function response name = %q, want 'search'", responseContent.Parts[0].FunctionResponse.Name)
+		}
+		if responseContent.Parts[0].FunctionResponse.Response["result"] != "Results here" {
+			t.Errorf("Function response result = %v, want 'Results here'", responseContent.Parts[0].FunctionResponse.Response["result"])
+		}
+	})
+
+	t.Run("tool result with error flag", func(t *testing.T) {
+		conv := core.NewConversation()
+		conv.AddUserMessage("Test")
+		conv.AddAssistantMessageWithToolUse("",
+			core.ToolUseBlock{
+				ID:    "calculate",
+				Name:  "calculate",
+				Input: map[string]any{"op": "divide", "a": 10, "b": 0},
+			},
+		)
+		conv.AddToolResultMessage("calculate", "Division by zero error", true)
+
+		contents := ConversationToContents(conv)
+
+		// Find the function response
+		var funcResp *genai.FunctionResponse
+		for _, content := range contents {
+			for _, part := range content.Parts {
+				if part.FunctionResponse != nil {
+					funcResp = part.FunctionResponse
+					break
+				}
+			}
+		}
+
+		if funcResp == nil {
+			t.Fatal("No function response found")
+		}
+
+		// For errors, response should have "error" key
+		if funcResp.Response["error"] != "Division by zero error" {
+			t.Errorf("Function response error = %v, want 'Division by zero error'", funcResp.Response["error"])
+		}
+	})
+
+	t.Run("multiple tool results in sequence", func(t *testing.T) {
+		conv := core.NewConversation()
+		conv.AddUserMessage("Test")
+		conv.AddAssistantMessageWithToolUse("",
+			core.ToolUseBlock{ID: "search", Name: "search", Input: map[string]any{"q": "test"}},
+			core.ToolUseBlock{ID: "lookup", Name: "lookup", Input: map[string]any{"key": "value"}},
+		)
+		conv.AddToolResultMessages(
+			core.ToolResultBlock{ToolUseID: "search", Content: "Result 1", IsError: false},
+			core.ToolResultBlock{ToolUseID: "lookup", Content: "Result 2", IsError: false},
+		)
+
+		contents := ConversationToContents(conv)
+
+		// Count function responses
+		funcResponseCount := 0
+		for _, content := range contents {
+			for _, part := range content.Parts {
+				if part.FunctionResponse != nil {
+					funcResponseCount++
+				}
+			}
+		}
+
+		if funcResponseCount != 2 {
+			t.Errorf("Expected 2 function responses, got %d", funcResponseCount)
+		}
 	})
 }
 

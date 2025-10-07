@@ -42,11 +42,13 @@ func NewAgent(client *instructor.InstructorAnthropic) *Agent {
 	return &Agent{
 		client: client,
 		conversation: core.NewConversation(`You are a helpful agent that can use tools to answer questions.
+
 Available tools:
 - search: Search for information
 - finish: Return the final answer
 
-Use tools step by step to gather information before finishing with your answer.`),
+IMPORTANT: You MUST always respond by calling one of these tools. Never respond with plain text.
+Use tools step by step to gather information, then call "finish" with your final answer.`),
 	}
 }
 
@@ -62,7 +64,7 @@ func (a *Agent) Run(ctx context.Context, goal string) (string, error) {
 		system, messages := anthropic_provider.ConversationToMessages(a.conversation)
 
 		// Let the LLM choose a tool
-		action, resp, err := a.client.CreateMessagesUnion(
+		actions, resp, err := a.client.CreateMessagesUnion(
 			ctx,
 			anthropic.MessagesRequest{
 				Model:     anthropic.ModelClaude3Haiku20240307,
@@ -71,8 +73,9 @@ func (a *Agent) Run(ctx context.Context, goal string) (string, error) {
 				MaxTokens: 1024,
 			},
 			instructor.UnionOptions{
-				Discriminator: "type",
-				Variants:      []any{SearchTool{}, FinishTool{}},
+				Discriminator:   "type",
+				Variants:        []any{SearchTool{}, FinishTool{}},
+				RequireToolCall: true, // Prevent plain text responses - model must always call a tool
 			},
 		)
 		if err != nil {
@@ -88,6 +91,13 @@ func (a *Agent) Run(ctx context.Context, goal string) (string, error) {
 			resp.Usage.InputTokens,
 			resp.Usage.OutputTokens,
 		)
+
+		// For this simple agent, we expect only one action per turn
+		if len(actions) == 0 {
+			return "", fmt.Errorf("no action returned from LLM")
+		}
+
+		action := actions[0]
 
 		// Execute the tool based on its type
 		var result string

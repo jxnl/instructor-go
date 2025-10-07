@@ -33,6 +33,13 @@ func (i *InstructorAnthropic) CreateMessagesUnion(
 	opts core.UnionOptions,
 ) (result []any, response anthropic.MessagesResponse, err error) {
 
+	// Apply RequireToolCall option if set
+	if opts.RequireToolCall {
+		request.ToolChoice = &anthropic.ToolChoice{
+			Type: "any",
+		}
+	}
+
 	result, resp, err := core.ChatHandlerUnion(i, ctx, request, opts)
 	if err != nil {
 		if resp == nil {

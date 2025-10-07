@@ -46,6 +46,11 @@ func (i *InstructorOpenAI) CreateChatCompletionUnion(
 	opts core.UnionOptions,
 ) (result []any, response openai.ChatCompletionResponse, err error) {
 
+	// Apply RequireToolCall option if set
+	if opts.RequireToolCall {
+		request.ToolChoice = "required"
+	}
+
 	result, resp, err := core.ChatHandlerUnion(i, ctx, request, opts)
 	if err != nil {
 		if resp == nil {

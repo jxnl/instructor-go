@@ -1,6 +1,8 @@
 package google
 
 import (
+	"encoding/json"
+
 	"github.com/567-labs/instructor-go/pkg/instructor/core"
 	"google.golang.org/genai"
 )
@@ -45,16 +47,107 @@ func ToGoogleContents(messages []core.Message) []*genai.Content {
 		case core.RoleSystem:
 			// Google doesn't have a dedicated system role, treat as user message
 			role = "user"
+		case core.RoleTool:
+			// Tool responses are sent as user messages
+			role = "user"
 		default:
 			continue
 		}
 
-		result = append(result, &genai.Content{
-			Role: role,
-			Parts: []*genai.Part{
-				{Text: msg.Content},
-			},
-		})
+		// If ContentBlocks is set, use structured content (takes precedence)
+		if len(msg.ContentBlocks) > 0 {
+			parts := make([]*genai.Part, 0)
+
+			for _, block := range msg.ContentBlocks {
+				switch block.Type {
+				case core.ContentBlockTypeText:
+					if block.Text != "" {
+						parts = append(parts, &genai.Part{
+							Text: block.Text,
+						})
+					}
+
+				case core.ContentBlockTypeToolUse:
+					if block.ToolUse != nil {
+						// Convert input to map[string]any if needed
+						var args map[string]any
+						switch v := block.ToolUse.Input.(type) {
+						case map[string]any:
+							args = v
+						case []byte:
+							// Try to unmarshal JSON
+							var m map[string]any
+							if err := json.Unmarshal(v, &m); err == nil {
+								args = m
+							} else {
+								// If unmarshal fails, wrap in a generic field
+								args = map[string]any{"data": string(v)}
+							}
+						case string:
+							// Try to unmarshal JSON string
+							var m map[string]any
+							if err := json.Unmarshal([]byte(v), &m); err == nil {
+								args = m
+							} else {
+								args = map[string]any{"data": v}
+							}
+						default:
+							// For other types, try to convert via JSON round-trip
+							data, err := json.Marshal(v)
+							if err == nil {
+								var m map[string]any
+								if err := json.Unmarshal(data, &m); err == nil {
+									args = m
+								}
+							}
+						}
+
+						if args != nil {
+							parts = append(parts, genai.NewPartFromFunctionCall(
+								block.ToolUse.Name,
+								args,
+							))
+						}
+					}
+
+				case core.ContentBlockTypeToolResult:
+					if block.ToolResult != nil {
+						// Create function response
+						// For Google, we need to extract the function name from the tool use ID
+						// Since Google uses the function name as the ID in our implementation
+						response := map[string]any{
+							"result": block.ToolResult.Content,
+						}
+
+						if block.ToolResult.IsError {
+							response = map[string]any{
+								"error": block.ToolResult.Content,
+							}
+						}
+
+						parts = append(parts, genai.NewPartFromFunctionResponse(
+							block.ToolResult.ToolUseID, // This is the function name in Google's case
+							response,
+						))
+					}
+				}
+			}
+
+			if len(parts) > 0 {
+				result = append(result, &genai.Content{
+					Role:  role,
+					Parts: parts,
+				})
+			}
+		} else {
+			// Fallback to legacy fields for backward compatibility
+			result = append(result, &genai.Content{
+				Role: role,
+				Parts: []*genai.Part{
+					{Text: msg.Content},
+				},
+			})
+		}
 	}
 
 	return result
