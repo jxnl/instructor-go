@@ -213,6 +213,12 @@ func (i *InstructorOpenAI) chatJSON(ctx context.Context, request *openai.ChatCom
 
 	text := resp.Choices[0].Message.Content
 
+	// Check for empty response - this can happen when the API doesn't support
+	// the json_object response format (e.g., some OpenAI-compatible APIs)
+	if text == "" {
+		return "", nilOpenaiRespWithUsage(&resp), errors.New("received empty response from model - the model may not support the 'json_object' response format. Try using ModeJSONSchema or ModeToolCall instead")
+	}
+
 	if strict {
 		resMap := make(map[string]any)
 		_ = json.Unmarshal([]byte(text), &resMap)
