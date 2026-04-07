@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/567-labs/instructor-go/pkg/instructor"
+	"github.com/jxnl/instructor-go/pkg/instructor"
 	anthropic "github.com/liushuangls/go-anthropic/v2"
 )
 
@@ -60,7 +60,7 @@ func main() {
 	}
 
 	// Call with union type extraction
-	action, response, err := client.CreateMessagesUnion(
+	actions, response, err := client.CreateMessagesUnion(
 		ctx,
 		request,
 		instructor.UnionOptions{
@@ -74,7 +74,14 @@ func main() {
 		return
 	}
 
-	// Type switch on the result
+	if len(actions) == 0 {
+		fmt.Println("No actions returned")
+		return
+	}
+
+	action := actions[0]
+
+	// Type switch on the first result
 	switch tool := action.(type) {
 	case SearchTool:
 		fmt.Printf("✓ SearchTool selected:\n")

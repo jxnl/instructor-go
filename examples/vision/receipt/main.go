@@ -6,9 +6,9 @@ import (
 	"math"
 	"os"
 
-	"github.com/567-labs/instructor-go/pkg/instructor"
-	"github.com/567-labs/instructor-go/pkg/instructor/core"
-	instructor_openai "github.com/567-labs/instructor-go/pkg/instructor/providers/openai"
+	"github.com/jxnl/instructor-go/pkg/instructor"
+	"github.com/jxnl/instructor-go/pkg/instructor/core"
+	instructor_openai "github.com/jxnl/instructor-go/pkg/instructor/providers/openai"
 	"github.com/sashabaranov/go-openai"
 )
 
@@ -86,9 +86,9 @@ func main() {
 
 	urls := []string{
 		// source: https://templates.mediamodifier.com/645124ff36ed2f5227cbf871/supermarket-receipt-template.jpg
-		"https://raw.githubusercontent.com/567-labs/instructor-go/main/examples/vision/receipt/supermarket-receipt-template.jpg",
+		"https://raw.githubusercontent.com/jxnl/instructor-go/main/examples/vision/receipt/supermarket-receipt-template.jpg",
 		// source: https://ocr.space/Content/Images/receipt-ocr-original.jpg
-		"https://raw.githubusercontent.com/567-labs/instructor-go/main/examples/vision/receipt/receipt-ocr-original.jpg",
+		"https://raw.githubusercontent.com/jxnl/instructor-go/main/examples/vision/receipt/receipt-ocr-original.jpg",
 	}
 
 	for _, url := range urls {

@@ -3,7 +3,7 @@ package anthropic
 import (
 	anthropic "github.com/liushuangls/go-anthropic/v2"
 
-	"github.com/567-labs/instructor-go/pkg/instructor/core"
+	"github.com/jxnl/instructor-go/pkg/instructor/core"
 )
 
 type InstructorAnthropic struct {

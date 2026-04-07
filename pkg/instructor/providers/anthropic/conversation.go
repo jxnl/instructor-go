@@ -3,7 +3,7 @@ package anthropic
 import (
 	"encoding/json"
 
-	"github.com/567-labs/instructor-go/pkg/instructor/core"
+	"github.com/jxnl/instructor-go/pkg/instructor/core"
 	anthropic "github.com/liushuangls/go-anthropic/v2"
 )
 

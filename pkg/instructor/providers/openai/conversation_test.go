@@ -3,7 +3,7 @@ package openai
 import (
 	"testing"
 
-	"github.com/567-labs/instructor-go/pkg/instructor/core"
+	"github.com/jxnl/instructor-go/pkg/instructor/core"
 	openai "github.com/sashabaranov/go-openai"
 )
 

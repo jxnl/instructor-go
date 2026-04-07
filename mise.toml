@@ -1,0 +1,18 @@
+[tools]
+go = "1.25.8"
+
+[env]
+GOTOOLCHAIN = "local"
+
+[tasks.test]
+description = "Run Go tests"
+run = "go test ./..."
+
+[tasks.deps-update]
+description = "Update Go deps without raising the Go 1.24 floor"
+run = [
+  "go get github.com/cohere-ai/cohere-go/v2@latest github.com/go-playground/validator/v10@v10.30.0 github.com/invopop/jsonschema@latest github.com/liushuangls/go-anthropic/v2@latest github.com/sashabaranov/go-openai@latest google.golang.org/genai@latest",
+  "go mod edit -go=1.24",
+  "go mod tidy",
+  "go test ./...",
+]

@@ -1,11 +1,11 @@
 package instructor
 
 import (
-	"github.com/567-labs/instructor-go/pkg/instructor/core"
-	"github.com/567-labs/instructor-go/pkg/instructor/providers/anthropic"
-	"github.com/567-labs/instructor-go/pkg/instructor/providers/cohere"
-	"github.com/567-labs/instructor-go/pkg/instructor/providers/google"
-	"github.com/567-labs/instructor-go/pkg/instructor/providers/openai"
+	"github.com/jxnl/instructor-go/pkg/instructor/core"
+	"github.com/jxnl/instructor-go/pkg/instructor/providers/anthropic"
+	"github.com/jxnl/instructor-go/pkg/instructor/providers/cohere"
+	"github.com/jxnl/instructor-go/pkg/instructor/providers/google"
+	"github.com/jxnl/instructor-go/pkg/instructor/providers/openai"
 
 	cohereSDK "github.com/cohere-ai/cohere-go/v2/client"
 	anthropicSDK "github.com/liushuangls/go-anthropic/v2"

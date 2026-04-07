@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/567-labs/instructor-go/pkg/instructor"
+	"github.com/jxnl/instructor-go/pkg/instructor"
 	"google.golang.org/genai"
 )
 

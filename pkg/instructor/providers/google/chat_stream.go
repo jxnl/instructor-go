@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/567-labs/instructor-go/pkg/instructor/core"
+	"github.com/jxnl/instructor-go/pkg/instructor/core"
 	"google.golang.org/genai"
 )
 
