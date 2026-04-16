@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/567-labs/instructor-go/pkg/instructor"
-	"github.com/567-labs/instructor-go/pkg/instructor/core"
-	instructor_openai "github.com/567-labs/instructor-go/pkg/instructor/providers/openai"
+	"github.com/jxnl/instructor-go/pkg/instructor"
+	"github.com/jxnl/instructor-go/pkg/instructor/core"
+	instructor_openai "github.com/jxnl/instructor-go/pkg/instructor/providers/openai"
 	"github.com/sashabaranov/go-openai"
 )
 
@@ -38,7 +38,7 @@ func main() {
 		instructor.WithMaxRetries(3),
 	)
 
-	url := "https://raw.githubusercontent.com/567-labs/instructor-go/main/examples/vision/openai/books.png"
+	url := "https://raw.githubusercontent.com/jxnl/instructor-go/main/examples/vision/openai/books.png"
 
 	conversation := core.NewConversation()
 	conversation.AddUserMessageWithImageURLs("Extract book catalog from the image", url)

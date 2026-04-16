@@ -4,7 +4,7 @@ Get reliable structured data from any LLM. Built on `jsonschema` for validation,
 
 ```go
 import (
-    "github.com/567-labs/instructor-go/pkg/instructor"
+    "github.com/jxnl/instructor-go/pkg/instructor"
     "github.com/sashabaranov/go-openai"
 )
 
@@ -33,8 +33,8 @@ fmt.Println(user) // User{Name: "John", Age: 25}
 
 **That's it.** No JSON parsing, no error handling, no retries. Just define a struct and get validated data.
 
-[![Documentation](https://pkg.go.dev/badge/github.com/instructor-ai/instructor-go/pkg/instructor.svg)](https://pkg.go.dev/github.com/instructor-ai/instructor-go/pkg/instructor)
-[![GitHub Stars](https://img.shields.io/github/stars/567-labs/instructor-go?style=flat-square)](https://github.com/567-labs/instructor-go)
+[![Documentation](https://pkg.go.dev/badge/github.com/jxnl/instructor-go/pkg/instructor.svg)](https://pkg.go.dev/github.com/jxnl/instructor-go/pkg/instructor)
+[![GitHub Stars](https://img.shields.io/github/stars/jxnl/instructor-go?style=flat-square)](https://github.com/jxnl/instructor-go)
 [![Discord](https://img.shields.io/discord/1192334452110659664?label=discord)](https://discord.gg/UD9GPjbs8c)
 
 ***
@@ -126,7 +126,7 @@ _, err := client.CreateChatCompletion(
 ## Install in seconds
 
 ```bash
-go get github.com/567-labs/instructor-go/pkg/instructor
+go get github.com/jxnl/instructor-go/pkg/instructor
 ```
 
 ## Works with every major provider
@@ -135,11 +135,11 @@ Use the same code with any LLM provider:
 
 ```go
 import (
-    "github.com/567-labs/instructor-go/pkg/instructor"
-    instructor_openai "github.com/567-labs/instructor-go/pkg/instructor/providers/openai"
-    instructor_anthropic "github.com/567-labs/instructor-go/pkg/instructor/providers/anthropic"
-    instructor_google "github.com/567-labs/instructor-go/pkg/instructor/providers/google"
-    instructor_cohere "github.com/567-labs/instructor-go/pkg/instructor/providers/cohere"
+    "github.com/jxnl/instructor-go/pkg/instructor"
+    instructor_openai "github.com/jxnl/instructor-go/pkg/instructor/providers/openai"
+    instructor_anthropic "github.com/jxnl/instructor-go/pkg/instructor/providers/anthropic"
+    instructor_google "github.com/jxnl/instructor-go/pkg/instructor/providers/google"
+    instructor_cohere "github.com/jxnl/instructor-go/pkg/instructor/providers/cohere"
 )
 
 // OpenAI
@@ -213,7 +213,7 @@ instructor.WithLogging("json:error")  // Production - only errors
 Stream partial objects as they're generated:
 
 ```go
-import "github.com/567-labs/instructor-go/pkg/instructor"
+import "github.com/jxnl/instructor-go/pkg/instructor"
 
 type User struct {
     Name string `json:"name"`
@@ -300,7 +300,7 @@ for turn := 0; turn < maxTurns; turn++ {
 Unified conversation API that works across all providers:
 
 ```go
-import "github.com/567-labs/instructor-go/pkg/instructor/core"
+import "github.com/jxnl/instructor-go/pkg/instructor/core"
 
 // Create a conversation with a system prompt
 conversation := core.NewConversation("You are a helpful assistant")
@@ -356,7 +356,7 @@ import (
     "fmt"
     "os"
 
-    "github.com/567-labs/instructor-go/pkg/instructor"
+    "github.com/jxnl/instructor-go/pkg/instructor"
     "github.com/sashabaranov/go-openai"
 )
 
@@ -406,7 +406,7 @@ Instructor's simple API is available in many languages:
 
 ### Learn more
 
-* [Documentation](https://pkg.go.dev/github.com/instructor-ai/instructor-go/pkg/instructor) - Full API reference
+* [Documentation](https://pkg.go.dev/github.com/jxnl/instructor-go/pkg/instructor) - Full API reference
 * [Examples](examples/README.md) - Copy-paste recipes for common patterns
 * [Discord](https://discord.gg/UD9GPjbs8c) - Get help from the community
 
@@ -432,7 +432,7 @@ See [`examples/`](examples/) for complete working examples:
 
 ## Contributing
 
-We welcome contributions! Check out our [good first issues](https://github.com/567-labs/instructor-go/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) to get started.
+We welcome contributions! Check out our [good first issues](https://github.com/jxnl/instructor-go/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) to get started.
 
 ## License
 

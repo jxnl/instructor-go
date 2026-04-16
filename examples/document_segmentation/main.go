@@ -7,11 +7,11 @@ import (
 	"os"
 	"strings"
 
-	"github.com/567-labs/instructor-go/pkg/instructor"
-	"github.com/567-labs/instructor-go/pkg/instructor/core"
-	instructor_cohere "github.com/567-labs/instructor-go/pkg/instructor/providers/cohere"
 	cohere "github.com/cohere-ai/cohere-go/v2"
 	cohereclient "github.com/cohere-ai/cohere-go/v2/client"
+	"github.com/jxnl/instructor-go/pkg/instructor"
+	"github.com/jxnl/instructor-go/pkg/instructor/core"
+	instructor_cohere "github.com/jxnl/instructor-go/pkg/instructor/providers/cohere"
 )
 
 type Section struct {
