@@ -102,6 +102,9 @@ func (i *InstructorOpenAI) createStream(ctx context.Context, request *openai.Cha
 			if err != nil {
 				return
 			}
+			if len(response.Choices) == 0 {
+				continue
+			}
 			text := response.Choices[0].Delta.Content
 			ch <- text
 		}

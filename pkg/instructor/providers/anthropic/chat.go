@@ -174,7 +174,13 @@ Make sure to return an instance of the JSON, not the schema itself.
 		return "", nil, err
 	}
 
+	if len(resp.Content) == 0 {
+		return "", nilAnthropicRespWithUsage(&resp), errors.New("received no content from model, expected at least 1 content block")
+	}
 	text := resp.Content[0].Text
+	if text == nil {
+		return "", nilAnthropicRespWithUsage(&resp), errors.New("received no text content from model")
+	}
 
 	return *text, &resp, nil
 }

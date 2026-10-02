@@ -211,7 +211,10 @@ func (i *InstructorOpenAI) chatJSON(ctx context.Context, request *openai.ChatCom
 		return "", nil, err
 	}
 
-	text := resp.Choices[0].Message.Content
+	text, err := firstChoiceMessageContent(&resp)
+	if err != nil {
+		return "", nilOpenaiRespWithUsage(&resp), err
+	}
 
 	// Check for empty response - this can happen when the API doesn't support
 	// the json_object response format (e.g., some OpenAI-compatible APIs)
@@ -239,9 +242,19 @@ func (i *InstructorOpenAI) chatJSONSchema(ctx context.Context, request *openai.C
 		return "", nil, err
 	}
 
-	text := resp.Choices[0].Message.Content
+	text, err := firstChoiceMessageContent(&resp)
+	if err != nil {
+		return "", nilOpenaiRespWithUsage(&resp), err
+	}
 
 	return text, &resp, nil
+}
+
+func firstChoiceMessageContent(resp *openai.ChatCompletionResponse) (string, error) {
+	if resp == nil || len(resp.Choices) == 0 {
+		return "", errors.New("received no choices from model, expected at least 1")
+	}
+	return resp.Choices[0].Message.Content, nil
 }
 
 func (i *InstructorOpenAI) EmptyResponseWithUsageSum(usage *core.UsageSum) interface{} {

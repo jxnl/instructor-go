@@ -72,5 +72,9 @@ func ToFunctionSchema(tType reflect.Type, tSchema *jsonschema.Schema) []Function
 }
 
 func (s *Schema) NameFromRef() string {
-	return strings.Split(s.Ref, "/")[2] // ex: '#/$defs/MyStruct'
+	parts := strings.Split(s.Ref, "/")
+	if len(parts) < 3 {
+		return ""
+	}
+	return parts[2] // ex: '#/$defs/MyStruct'
 }
