@@ -29,8 +29,6 @@ func WithMaxRetries(maxRetries int) Options {
 	return Options{MaxRetries: ToPtr(maxRetries)}
 }
 
-// WithTokenBudget limits cumulative reported tokens before starting another retry.
-// A non-positive budget is rejected when a chat call starts.
 func WithTokenBudget(tokenBudget int) Options {
 	return Options{TokenBudget: ToPtr(tokenBudget)}
 }

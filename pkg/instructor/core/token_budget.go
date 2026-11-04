@@ -5,7 +5,6 @@ import (
 	"fmt"
 )
 
-// TokenBudgetError includes usage from failed attempts and wraps the last error.
 type TokenBudgetError struct {
 	Budget     int
 	Usage      UsageSum

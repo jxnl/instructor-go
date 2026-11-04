@@ -14,8 +14,7 @@ type UsageSum struct {
 	InputTokens  int
 	OutputTokens int
 	TotalTokens  int
-	// UsageKnown reports whether the latest counted response had usable token usage.
-	UsageKnown bool
+	UsageKnown   bool
 }
 
 // truncateString truncates a string to maxLen characters for logging

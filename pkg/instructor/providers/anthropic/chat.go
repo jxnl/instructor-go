@@ -226,7 +226,6 @@ func (i *InstructorAnthropic) CountUsageFromResponse(response interface{}, usage
 
 	input := resp.Usage.InputTokens
 	output := resp.Usage.OutputTokens
-	// Cached input is reported separately from uncached input by Anthropic.
 	totalInput := input + resp.Usage.CacheCreationInputTokens + resp.Usage.CacheReadInputTokens
 	usage.UsageKnown = totalInput > 0 && output > 0
 	usage.InputTokens += input
