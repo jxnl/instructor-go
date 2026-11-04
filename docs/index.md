@@ -72,6 +72,30 @@ Age:  %d
 }
 ```
 
+## Token budgets for retries
+
+Use `instructor.WithTokenBudget(2000)` with `WithMaxRetries` to limit tokens
+spent on retries after JSON parsing or validation fails. The budget resets for
+each call. It applies to regular and union requests.
+Streaming calls with a budget return an error before sending a request.
+Use `errors.Is(err, instructor.ErrTokenBudgetStreaming)` to check for this error.
+
+The first request runs normally. You still receive a successful result if the
+total goes over budget. After a failed request, the client will not retry if
+reported usage has reached the budget or usage is missing or incomplete.
+
+Zero and negative budgets cause an error before any request. Without this
+option, retries work as before. Retry limits and context deadlines still apply.
+If no retries remain, you receive the usual retry limit error instead.
+
+The client uses provider totals when available. Otherwise, it adds input and
+output counts. Anthropic totals include cache tokens. If the SDK cannot tell
+zero counts from missing usage, the client requires a positive total or positive
+input and output counts before it retries.
+
+Use `errors.As` with a `*instructor.TokenBudgetError` to read `Budget`, `Usage`,
+and `UsageKnown`. Use `errors.Unwrap` to get the last parsing or validation error.
+
 ## Contributing
 
 If you want to help out, checkout some of the issues marked as `good-first-issue` or `help-wanted`. Found [here](https://github.com/jxnl/instructor-go/labels/good%20first%20issue). They could be anything from code improvements, a guest blog post, or a new cook book.

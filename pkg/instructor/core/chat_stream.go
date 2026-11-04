@@ -17,6 +17,17 @@ const WRAPPER_END = `"items": [`
 
 func ChatStreamHandler(i Instructor, ctx context.Context, request interface{}, response any) (<-chan interface{}, error) {
 
+	budget, err := retryTokenBudget(i)
+	if err != nil {
+		return nil, err
+	}
+	if budget > 0 {
+		return nil, ErrTokenBudgetStreaming
+	}
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+
 	responseType := reflect.TypeOf(response)
 
 	streamWrapperType := reflect.StructOf([]reflect.StructField{

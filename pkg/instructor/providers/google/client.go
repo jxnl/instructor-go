@@ -8,11 +8,12 @@ import (
 type InstructorGoogle struct {
 	*genai.Client
 
-	provider   core.Provider
-	mode       core.Mode
-	maxRetries int
-	validate   bool
-	logger     core.Logger
+	provider    core.Provider
+	mode        core.Mode
+	maxRetries  int
+	tokenBudget *int
+	validate    bool
+	logger      core.Logger
 }
 
 func FromGoogle(client *genai.Client, opts ...core.Options) *InstructorGoogle {
@@ -21,11 +22,12 @@ func FromGoogle(client *genai.Client, opts ...core.Options) *InstructorGoogle {
 	i := &InstructorGoogle{
 		Client: client,
 
-		provider:   core.ProviderGoogle,
-		mode:       *options.Mode,
-		maxRetries: *options.MaxRetries,
-		validate:   *options.Validate,
-		logger:     options.Logger,
+		provider:    core.ProviderGoogle,
+		mode:        *options.Mode,
+		maxRetries:  *options.MaxRetries,
+		tokenBudget: options.TokenBudget,
+		validate:    *options.Validate,
+		logger:      options.Logger,
 	}
 	return i
 }
@@ -40,6 +42,10 @@ func (i *InstructorGoogle) Mode() core.Mode {
 
 func (i *InstructorGoogle) MaxRetries() int {
 	return i.maxRetries
+}
+
+func (i *InstructorGoogle) TokenBudget() *int {
+	return i.tokenBudget
 }
 
 func (i *InstructorGoogle) Validate() bool {
@@ -96,26 +102,43 @@ func (i *InstructorGoogle) AddUsageSumToResponse(response interface{}, usage *co
 		return response, nil
 	}
 
+	if usage == nil {
+		return response, nil
+	}
 	if resp.UsageMetadata == nil {
 		resp.UsageMetadata = &genai.GenerateContentResponseUsageMetadata{}
 	}
+	if resp.UsageMetadata.TotalTokenCount <= 0 {
+		resp.UsageMetadata.TotalTokenCount = resp.UsageMetadata.PromptTokenCount + resp.UsageMetadata.CandidatesTokenCount
+	}
 
-	resp.UsageMetadata.PromptTokenCount = int32(usage.InputTokens)
-	resp.UsageMetadata.CandidatesTokenCount = int32(usage.OutputTokens)
-	resp.UsageMetadata.TotalTokenCount = int32(usage.TotalTokens)
+	resp.UsageMetadata.PromptTokenCount += int32(usage.InputTokens)
+	resp.UsageMetadata.CandidatesTokenCount += int32(usage.OutputTokens)
+	resp.UsageMetadata.TotalTokenCount += int32(usage.TotalTokens)
 
 	return resp, nil
 }
 
 func (i *InstructorGoogle) CountUsageFromResponse(response interface{}, usage *core.UsageSum) *core.UsageSum {
+	if usage == nil {
+		return nil
+	}
+	usage.UsageKnown = false
 	resp, ok := response.(*GoogleResponse)
 	if !ok || resp == nil || resp.UsageMetadata == nil {
 		return usage
 	}
 
-	usage.InputTokens = int(resp.UsageMetadata.PromptTokenCount)
-	usage.OutputTokens = int(resp.UsageMetadata.CandidatesTokenCount)
-	usage.TotalTokens = int(resp.UsageMetadata.TotalTokenCount)
+	input := int(resp.UsageMetadata.PromptTokenCount)
+	output := int(resp.UsageMetadata.CandidatesTokenCount)
+	total := int(resp.UsageMetadata.TotalTokenCount)
+	usage.UsageKnown = total > 0 || (input > 0 && output > 0)
+	if total <= 0 {
+		total = input + output
+	}
+	usage.InputTokens += input
+	usage.OutputTokens += output
+	usage.TotalTokens += total
 
 	return usage
 }

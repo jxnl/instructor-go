@@ -182,6 +182,46 @@ var user User
 _, err := client.CreateChatCompletion(ctx, request, &user)
 ```
 
+### Token budgets for retries
+
+Use `WithTokenBudget` to limit tokens spent on retries after JSON parsing or
+validation fails:
+
+```go
+client := instructor.FromOpenAI(
+    openai.NewClient(apiKey),
+    instructor.WithMaxRetries(5),
+    instructor.WithTokenBudget(2000),
+    instructor.WithValidation(),
+)
+```
+
+The budget resets for each call. It applies to regular and union requests.
+Streaming calls with a budget return an error before sending a request.
+Use `errors.Is(err, instructor.ErrTokenBudgetStreaming)` to check for this error.
+
+The first request runs normally. You still receive a successful result if the
+total goes over budget. After a failed request, the client will not retry if
+reported usage has reached the budget or usage is missing or incomplete.
+
+Zero and negative budgets cause an error before any request. Without this
+option, retries work as before. Retry limits and context deadlines still apply.
+
+Use `errors.As` to inspect a `TokenBudgetError`. You can read the available
+usage and use `errors.Unwrap` to get the last parsing or validation error.
+Import the standard `errors` package for this example:
+
+```go
+var budgetErr *instructor.TokenBudgetError
+if errors.As(err, &budgetErr) {
+    fmt.Printf("budget=%d available_tokens=%d known=%t\n",
+        budgetErr.Budget, budgetErr.Usage.TotalTokens, budgetErr.UsageKnown)
+    fmt.Printf("last failure: %v\n", errors.Unwrap(budgetErr))
+}
+```
+
+If no retries remain, you receive the usual retry limit error instead.
+
 ### Debug mode for troubleshooting
 
 Hit "max retry attempts" errors? Enable debug logging to see exactly what's happening:
