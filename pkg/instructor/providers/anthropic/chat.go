@@ -201,8 +201,11 @@ func (i *InstructorAnthropic) EmptyResponseWithResponseUsage(response interface{
 
 func (i *InstructorAnthropic) AddUsageSumToResponse(response interface{}, usage *core.UsageSum) (interface{}, error) {
 	resp, ok := response.(*anthropic.MessagesResponse)
-	if !ok {
+	if !ok || resp == nil {
 		return response, fmt.Errorf("internal type error: expected *anthropic.MessagesResponse, got %T", response)
+	}
+	if usage == nil {
+		return response, nil
 	}
 
 	resp.Usage.InputTokens += usage.InputTokens
@@ -212,13 +215,23 @@ func (i *InstructorAnthropic) AddUsageSumToResponse(response interface{}, usage 
 }
 
 func (i *InstructorAnthropic) CountUsageFromResponse(response interface{}, usage *core.UsageSum) *core.UsageSum {
+	if usage == nil {
+		return nil
+	}
+	usage.UsageKnown = false
 	resp, ok := response.(*anthropic.MessagesResponse)
-	if !ok {
+	if !ok || resp == nil {
 		return usage
 	}
 
-	usage.InputTokens += resp.Usage.InputTokens
-	usage.OutputTokens += resp.Usage.OutputTokens
+	input := resp.Usage.InputTokens
+	output := resp.Usage.OutputTokens
+	// Cached input is reported separately from uncached input by Anthropic.
+	totalInput := input + resp.Usage.CacheCreationInputTokens + resp.Usage.CacheReadInputTokens
+	usage.UsageKnown = totalInput > 0 && output > 0
+	usage.InputTokens += input
+	usage.OutputTokens += output
+	usage.TotalTokens += totalInput + output
 
 	return usage
 }

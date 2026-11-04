@@ -8,11 +8,12 @@ import (
 type InstructorOpenAI struct {
 	*openai.Client
 
-	provider   core.Provider
-	mode       core.Mode
-	maxRetries int
-	validate   bool
-	logger     core.Logger
+	provider    core.Provider
+	mode        core.Mode
+	maxRetries  int
+	tokenBudget *int
+	validate    bool
+	logger      core.Logger
 }
 
 var _ core.Instructor = &InstructorOpenAI{}
@@ -24,11 +25,12 @@ func FromOpenAI(client *openai.Client, opts ...core.Options) *InstructorOpenAI {
 	i := &InstructorOpenAI{
 		Client: client,
 
-		provider:   core.ProviderOpenAI,
-		mode:       *options.Mode,
-		maxRetries: *options.MaxRetries,
-		validate:   *options.Validate,
-		logger:     options.Logger,
+		provider:    core.ProviderOpenAI,
+		mode:        *options.Mode,
+		maxRetries:  *options.MaxRetries,
+		tokenBudget: options.TokenBudget,
+		validate:    *options.Validate,
+		logger:      options.Logger,
 	}
 	return i
 }
@@ -41,6 +43,9 @@ func (i *InstructorOpenAI) Mode() core.Mode {
 }
 func (i *InstructorOpenAI) MaxRetries() int {
 	return i.maxRetries
+}
+func (i *InstructorOpenAI) TokenBudget() *int {
+	return i.tokenBudget
 }
 func (i *InstructorOpenAI) Validate() bool {
 	return i.validate

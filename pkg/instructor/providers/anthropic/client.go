@@ -9,11 +9,12 @@ import (
 type InstructorAnthropic struct {
 	*anthropic.Client
 
-	provider   core.Provider
-	mode       core.Mode
-	maxRetries int
-	validate   bool
-	logger     core.Logger
+	provider    core.Provider
+	mode        core.Mode
+	maxRetries  int
+	tokenBudget *int
+	validate    bool
+	logger      core.Logger
 }
 
 var _ core.Instructor = &InstructorAnthropic{}
@@ -25,11 +26,12 @@ func FromAnthropic(client *anthropic.Client, opts ...core.Options) *InstructorAn
 	i := &InstructorAnthropic{
 		Client: client,
 
-		provider:   core.ProviderAnthropic,
-		mode:       *options.Mode,
-		maxRetries: *options.MaxRetries,
-		validate:   *options.Validate,
-		logger:     options.Logger,
+		provider:    core.ProviderAnthropic,
+		mode:        *options.Mode,
+		maxRetries:  *options.MaxRetries,
+		tokenBudget: options.TokenBudget,
+		validate:    *options.Validate,
+		logger:      options.Logger,
 	}
 	return i
 }
@@ -40,6 +42,10 @@ func (i *InstructorAnthropic) Provider() core.Provider {
 
 func (i *InstructorAnthropic) MaxRetries() int {
 	return i.maxRetries
+}
+
+func (i *InstructorAnthropic) TokenBudget() *int {
+	return i.tokenBudget
 }
 
 func (i *InstructorAnthropic) Mode() core.Mode {

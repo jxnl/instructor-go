@@ -14,6 +14,8 @@ type UsageSum struct {
 	InputTokens  int
 	OutputTokens int
 	TotalTokens  int
+	// UsageKnown reports whether the latest counted response had usable token usage.
+	UsageKnown bool
 }
 
 // truncateString truncates a string to maxLen characters for logging
@@ -104,7 +106,10 @@ func defaultAppendErrorToRequest(request interface{}, failedResponse string, err
 
 func ChatHandler(i Instructor, ctx context.Context, request interface{}, response any) (interface{}, error) {
 
-	var err error
+	budget, err := retryTokenBudget(i)
+	if err != nil {
+		return nil, err
+	}
 	logger := i.Logger().With(
 		"provider", i.Provider(),
 		"mode", i.Mode(),
@@ -127,6 +132,9 @@ func ChatHandler(i Instructor, ctx context.Context, request interface{}, respons
 	usage := &UsageSum{}
 
 	for attempt := 0; attempt <= i.MaxRetries(); attempt++ {
+		if err := ctx.Err(); err != nil {
+			return i.EmptyResponseWithUsageSum(usage), err
+		}
 		logger.Debug("starting attempt",
 			"attempt", attempt+1,
 			"max_attempts", i.MaxRetries()+1,
@@ -161,6 +169,9 @@ func ChatHandler(i Instructor, ctx context.Context, request interface{}, respons
 
 			// If we have more retries left, send back the error and the malformed JSON
 			if attempt < i.MaxRetries() {
+				if err := checkRetryTokenBudget(ctx, budget, usage, err); err != nil {
+					return i.EmptyResponseWithUsageSum(usage), err
+				}
 				logger.Info("retrying after json error",
 					"attempt", attempt+1,
 					"next_attempt", attempt+2,
@@ -201,6 +212,9 @@ func ChatHandler(i Instructor, ctx context.Context, request interface{}, respons
 
 				// If we have more retries left, send back the validation error
 				if attempt < i.MaxRetries() {
+					if err := checkRetryTokenBudget(ctx, budget, usage, err); err != nil {
+						return i.EmptyResponseWithUsageSum(usage), err
+					}
 					logger.Info("retrying after validation error",
 						"attempt", attempt+1,
 						"next_attempt", attempt+2,
@@ -245,6 +259,10 @@ func ChatHandler(i Instructor, ctx context.Context, request interface{}, respons
 // Always returns []any containing one or more variant instances
 func ChatHandlerUnion(i Instructor, ctx context.Context, request interface{}, opts UnionOptions) ([]any, interface{}, error) {
 
+	budget, err := retryTokenBudget(i)
+	if err != nil {
+		return nil, nil, err
+	}
 	logger := i.Logger().With(
 		"provider", i.Provider(),
 		"mode", i.Mode(),
@@ -285,6 +303,9 @@ func ChatHandlerUnion(i Instructor, ctx context.Context, request interface{}, op
 	usage := &UsageSum{}
 
 	for attempt := 0; attempt <= i.MaxRetries(); attempt++ {
+		if err := ctx.Err(); err != nil {
+			return nil, i.EmptyResponseWithUsageSum(usage), err
+		}
 		logger.Debug("starting union attempt",
 			"attempt", attempt+1,
 			"max_attempts", i.MaxRetries()+1,
@@ -321,6 +342,9 @@ func ChatHandlerUnion(i Instructor, ctx context.Context, request interface{}, op
 
 			// If we have more retries left, send back the error and the malformed JSON
 			if attempt < i.MaxRetries() {
+				if err := checkRetryTokenBudget(ctx, budget, usage, err); err != nil {
+					return nil, i.EmptyResponseWithUsageSum(usage), err
+				}
 				logger.Info("retrying after union type error",
 					"attempt", attempt+1,
 					"next_attempt", attempt+2,
@@ -363,6 +387,9 @@ func ChatHandlerUnion(i Instructor, ctx context.Context, request interface{}, op
 
 				// If we have more retries left, send back the validation error
 				if attempt < i.MaxRetries() {
+					if err := checkRetryTokenBudget(ctx, budget, usage, err); err != nil {
+						return nil, i.EmptyResponseWithUsageSum(usage), err
+					}
 					logger.Info("retrying after union validation error",
 						"attempt", attempt+1,
 						"next_attempt", attempt+2,

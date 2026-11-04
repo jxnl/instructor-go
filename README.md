@@ -182,6 +182,54 @@ var user User
 _, err := client.CreateChatCompletion(ctx, request, &user)
 ```
 
+### Token budgets for retries
+
+Use `WithTokenBudget` to limit cumulative reported token usage before starting
+another JSON-decoding or validation retry:
+
+```go
+client := instructor.FromOpenAI(
+    openai.NewClient(apiKey),
+    instructor.WithMaxRetries(5),
+    instructor.WithTokenBudget(2000),
+    instructor.WithValidation(),
+)
+```
+
+The budget applies per non-streaming call, including union extraction. The first
+request always runs unless the context is canceled or the budget is invalid.
+A successful attempt is returned even if it crosses the budget. After a failed
+attempt, another retry is allowed only while cumulative usage is below the
+budget. `WithMaxRetries` and context cancellation/deadlines still apply independently.
+Leaving the budget unset preserves retry-count-only behavior; zero or negative
+budgets return an error before making a request.
+
+If usage is missing or incomplete, budgeting stops further retries rather than
+treating unknown usage as zero. Provider-reported totals take precedence over
+input/output sums; they are never added together. Anthropic totals also include
+separately reported cache creation/read tokens. For SDK usage fields that cannot
+distinguish missing counts from zero, a positive total or positive counts for both
+input and output are required. Cohere's explicit zero-valued counts are usable.
+
+When a budget prevents a retry, inspect `TokenBudgetError` with `errors.As`
+(`errors` is a standard-library import):
+
+```go
+var budgetErr *instructor.TokenBudgetError
+if errors.As(err, &budgetErr) {
+    fmt.Printf("budget=%d available_tokens=%d known=%t\n",
+        budgetErr.Budget, budgetErr.Usage.TotalTokens, budgetErr.UsageKnown)
+    fmt.Printf("last failure: %v\n", errors.Unwrap(budgetErr))
+}
+```
+
+The error exposes all available normalized usage and unwraps the last decoding
+or validation error. The provider response also retains available usage in its
+native fields. If the retry count is already exhausted, the existing retry-limit
+error is returned instead of a budget error. Streaming has no validation-retry
+loop and is not capped by this option.
+
+
 ### Debug mode for troubleshooting
 
 Hit "max retry attempts" errors? Enable debug logging to see exactly what's happening:

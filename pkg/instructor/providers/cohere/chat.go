@@ -129,24 +129,54 @@ func (i *InstructorCohere) EmptyResponseWithResponseUsage(response interface{}) 
 
 func (i *InstructorCohere) AddUsageSumToResponse(response interface{}, usage *core.UsageSum) (interface{}, error) {
 	resp, ok := response.(*cohere.NonStreamedChatResponse)
-	if !ok {
+	if !ok || resp == nil {
 		return response, fmt.Errorf("internal type error: expected *cohere.NonStreamedChatResponse, got %T", response)
 	}
-
-	*resp.Meta.Tokens.InputTokens += float64(usage.InputTokens)
-	*resp.Meta.Tokens.OutputTokens += float64(usage.OutputTokens)
+	if usage == nil {
+		return response, nil
+	}
+	if resp.Meta == nil {
+		resp.Meta = &cohere.ApiMeta{}
+	}
+	if resp.Meta.Tokens == nil {
+		resp.Meta.Tokens = &cohere.ApiMetaTokens{}
+	}
+	if resp.Meta.Tokens.InputTokens == nil {
+		resp.Meta.Tokens.InputTokens = core.ToPtr(float64(usage.InputTokens))
+	} else {
+		*resp.Meta.Tokens.InputTokens += float64(usage.InputTokens)
+	}
+	if resp.Meta.Tokens.OutputTokens == nil {
+		resp.Meta.Tokens.OutputTokens = core.ToPtr(float64(usage.OutputTokens))
+	} else {
+		*resp.Meta.Tokens.OutputTokens += float64(usage.OutputTokens)
+	}
 
 	return response, nil
 }
 
 func (i *InstructorCohere) CountUsageFromResponse(response interface{}, usage *core.UsageSum) *core.UsageSum {
+	if usage == nil {
+		return nil
+	}
+	usage.UsageKnown = false
 	resp, ok := response.(*cohere.NonStreamedChatResponse)
-	if !ok {
+	if !ok || resp == nil || resp.Meta == nil || resp.Meta.Tokens == nil {
 		return usage
 	}
 
-	usage.InputTokens += int(*resp.Meta.Tokens.InputTokens)
-	usage.OutputTokens += int(*resp.Meta.Tokens.OutputTokens)
+	tokens := resp.Meta.Tokens
+	input, output := 0, 0
+	if tokens.InputTokens != nil {
+		input = int(*tokens.InputTokens)
+	}
+	if tokens.OutputTokens != nil {
+		output = int(*tokens.OutputTokens)
+	}
+	usage.UsageKnown = tokens.InputTokens != nil && tokens.OutputTokens != nil
+	usage.InputTokens += input
+	usage.OutputTokens += output
+	usage.TotalTokens += input + output
 
 	return usage
 }

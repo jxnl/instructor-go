@@ -6,10 +6,11 @@ const (
 )
 
 type Options struct {
-	Mode       *Mode
-	MaxRetries *int
-	Validate   *bool
-	Logger     Logger
+	Mode        *Mode
+	MaxRetries  *int
+	TokenBudget *int
+	Validate    *bool
+	Logger      Logger
 	// Provider specific options:
 }
 
@@ -26,6 +27,12 @@ func WithMode(mode Mode) Options {
 
 func WithMaxRetries(maxRetries int) Options {
 	return Options{MaxRetries: ToPtr(maxRetries)}
+}
+
+// WithTokenBudget limits cumulative reported tokens before starting another retry.
+// A non-positive budget is rejected when a chat call starts.
+func WithTokenBudget(tokenBudget int) Options {
+	return Options{TokenBudget: ToPtr(tokenBudget)}
 }
 
 func WithValidation() Options {
@@ -55,6 +62,9 @@ func mergeOption(old, new Options) Options {
 	}
 	if new.MaxRetries != nil {
 		old.MaxRetries = new.MaxRetries
+	}
+	if new.TokenBudget != nil {
+		old.TokenBudget = new.TokenBudget
 	}
 	if new.Validate != nil {
 		old.Validate = new.Validate

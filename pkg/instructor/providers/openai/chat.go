@@ -267,8 +267,14 @@ func (i *InstructorOpenAI) EmptyResponseWithResponseUsage(response interface{}) 
 
 func (i *InstructorOpenAI) AddUsageSumToResponse(response interface{}, usage *core.UsageSum) (interface{}, error) {
 	resp, ok := response.(*openai.ChatCompletionResponse)
-	if !ok {
+	if !ok || resp == nil {
 		return response, fmt.Errorf("internal type error: expected *openai.ChatCompletionResponse, got %T", response)
+	}
+	if usage == nil {
+		return response, nil
+	}
+	if resp.Usage.TotalTokens <= 0 {
+		resp.Usage.TotalTokens = resp.Usage.PromptTokens + resp.Usage.CompletionTokens
 	}
 
 	resp.Usage.PromptTokens += usage.InputTokens
@@ -279,14 +285,25 @@ func (i *InstructorOpenAI) AddUsageSumToResponse(response interface{}, usage *co
 }
 
 func (i *InstructorOpenAI) CountUsageFromResponse(response interface{}, usage *core.UsageSum) *core.UsageSum {
+	if usage == nil {
+		return nil
+	}
+	usage.UsageKnown = false
 	resp, ok := response.(*openai.ChatCompletionResponse)
-	if !ok {
+	if !ok || resp == nil {
 		return usage
 	}
 
-	usage.InputTokens += resp.Usage.PromptTokens
-	usage.OutputTokens += resp.Usage.CompletionTokens
-	usage.TotalTokens += resp.Usage.TotalTokens
+	input := resp.Usage.PromptTokens
+	output := resp.Usage.CompletionTokens
+	total := resp.Usage.TotalTokens
+	usage.UsageKnown = total > 0 || (input > 0 && output > 0)
+	if total <= 0 {
+		total = input + output
+	}
+	usage.InputTokens += input
+	usage.OutputTokens += output
+	usage.TotalTokens += total
 
 	return usage
 }

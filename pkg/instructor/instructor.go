@@ -24,6 +24,7 @@ type (
 	UnionOptions         = core.UnionOptions
 	UnionSchema          = core.UnionSchema
 	UnionValidationError = core.UnionValidationError
+	TokenBudgetError     = core.TokenBudgetError
 	Logger               = core.Logger
 )
 
@@ -68,11 +69,12 @@ const (
 
 // Re-export option functions
 var (
-	WithMode       = core.WithMode
-	WithMaxRetries = core.WithMaxRetries
-	WithValidation = core.WithValidation
-	WithLogger     = core.WithLogger
-	WithLogging    = core.WithLogging
+	WithMode        = core.WithMode
+	WithMaxRetries  = core.WithMaxRetries
+	WithTokenBudget = core.WithTokenBudget
+	WithValidation  = core.WithValidation
+	WithLogger      = core.WithLogger
+	WithLogging     = core.WithLogging
 )
 
 // Re-export core functions

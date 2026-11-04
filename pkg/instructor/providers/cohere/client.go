@@ -8,11 +8,12 @@ import (
 type InstructorCohere struct {
 	*cohere.Client
 
-	provider   core.Provider
-	mode       core.Mode
-	maxRetries int
-	validate   bool
-	logger     core.Logger
+	provider    core.Provider
+	mode        core.Mode
+	maxRetries  int
+	tokenBudget *int
+	validate    bool
+	logger      core.Logger
 }
 
 var _ core.Instructor = &InstructorCohere{}
@@ -24,10 +25,11 @@ func FromCohere(client *cohere.Client, opts ...core.Options) *InstructorCohere {
 	i := &InstructorCohere{
 		Client: client,
 
-		provider:   core.ProviderCohere,
-		mode:       *options.Mode,
-		maxRetries: *options.MaxRetries,
-		logger:     options.Logger,
+		provider:    core.ProviderCohere,
+		mode:        *options.Mode,
+		maxRetries:  *options.MaxRetries,
+		tokenBudget: options.TokenBudget,
+		logger:      options.Logger,
 	}
 	return i
 }
@@ -42,6 +44,9 @@ func (i *InstructorCohere) Mode() core.Mode {
 
 func (i *InstructorCohere) MaxRetries() int {
 	return i.maxRetries
+}
+func (i *InstructorCohere) TokenBudget() *int {
+	return i.tokenBudget
 }
 func (i *InstructorCohere) Validate() bool {
 	return i.validate
