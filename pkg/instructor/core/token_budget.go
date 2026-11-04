@@ -2,8 +2,11 @@ package core
 
 import (
 	"context"
+	"errors"
 	"fmt"
 )
+
+var ErrTokenBudgetStreaming = errors.New("token budgets are not supported for streaming responses")
 
 type TokenBudgetError struct {
 	Budget     int

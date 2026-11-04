@@ -77,6 +77,8 @@ var (
 	WithLogging     = core.WithLogging
 )
 
+var ErrTokenBudgetStreaming = core.ErrTokenBudgetStreaming
+
 // Re-export core functions
 var (
 	NewSchema        = core.NewSchema

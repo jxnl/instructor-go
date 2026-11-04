@@ -76,7 +76,9 @@ Age:  %d
 
 Use `instructor.WithTokenBudget(2000)` with `WithMaxRetries` to limit tokens
 spent on retries after JSON parsing or validation fails. The budget resets for
-each call. It applies to regular and union requests, but not streaming.
+each call. It applies to regular and union requests.
+Streaming calls with a budget return an error before sending a request.
+Use `errors.Is(err, instructor.ErrTokenBudgetStreaming)` to check for this error.
 
 The first request runs normally. You still receive a successful result if the
 total goes over budget. After a failed request, the client will not retry if

@@ -196,8 +196,9 @@ client := instructor.FromOpenAI(
 )
 ```
 
-The budget resets for each call. It applies to regular and union requests, but
-not streaming.
+The budget resets for each call. It applies to regular and union requests.
+Streaming calls with a budget return an error before sending a request.
+Use `errors.Is(err, instructor.ErrTokenBudgetStreaming)` to check for this error.
 
 The first request runs normally. You still receive a successful result if the
 total goes over budget. After a failed request, the client will not retry if
