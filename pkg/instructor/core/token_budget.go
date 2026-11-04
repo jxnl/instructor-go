@@ -5,9 +5,7 @@ import (
 	"fmt"
 )
 
-// TokenBudgetError stops a retry because the budget was reached or usage is unknown.
-// Usage contains all available counts from failed attempts; Err is the last
-// JSON decoding or validation error.
+// TokenBudgetError includes usage from failed attempts and wraps the last error.
 type TokenBudgetError struct {
 	Budget     int
 	Usage      UsageSum

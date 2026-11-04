@@ -74,23 +74,25 @@ Age:  %d
 
 ## Token budgets for retries
 
-Add `instructor.WithTokenBudget(2000)` alongside `WithMaxRetries` to guard
-non-streaming JSON-decoding and validation retries, including union extraction.
-The budget resets for each call. The first request runs normally, and successful
-results are returned even if they exceed the budget. Zero and negative budgets
-are rejected before a request is made; omitting the option leaves retries unchanged.
+Use `instructor.WithTokenBudget(2000)` with `WithMaxRetries` to limit tokens
+spent on retries after JSON parsing or validation fails. The budget resets for
+each call. It applies to regular and union requests, but not streaming.
 
-After a failed attempt, retries stop when cumulative reported tokens reach the
-budget or usage is missing/incomplete. Provider totals are used when available;
-otherwise complete input/output counts are summed without double counting.
-For non-pointer SDK counts, zero may be indistinguishable from missing usage,
-so budgeting conservatively requires a positive total or both counts positive.
+The first request runs normally. You still receive a successful result if the
+total goes over budget. After a failed request, the client will not retry if
+reported usage has reached the budget or usage is missing or incomplete.
 
-Use `errors.As(err, &budgetErr)` with a `*instructor.TokenBudgetError` to inspect
-`Budget`, `Usage`, and `UsageKnown`. The error unwraps the last decoding or
-validation error. Retry limits and context cancellation/deadlines still apply
-independently; an exhausted retry limit retains its existing error.
+Zero and negative budgets cause an error before any request. Without this
+option, retries work as before. Retry limits and context deadlines still apply.
+If no retries remain, you receive the usual retry limit error instead.
 
+The client uses provider totals when available. Otherwise, it adds input and
+output counts. Anthropic totals include cache tokens. If the SDK cannot tell
+zero counts from missing usage, the client requires a positive total or positive
+input and output counts before it retries.
+
+Use `errors.As` with a `*instructor.TokenBudgetError` to read `Budget`, `Usage`,
+and `UsageKnown`. Use `errors.Unwrap` to get the last parsing or validation error.
 
 ## Contributing
 

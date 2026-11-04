@@ -184,8 +184,8 @@ _, err := client.CreateChatCompletion(ctx, request, &user)
 
 ### Token budgets for retries
 
-Use `WithTokenBudget` to limit cumulative reported token usage before starting
-another JSON-decoding or validation retry:
+Use `WithTokenBudget` to limit tokens spent on retries after JSON parsing or
+validation fails:
 
 ```go
 client := instructor.FromOpenAI(
@@ -196,23 +196,19 @@ client := instructor.FromOpenAI(
 )
 ```
 
-The budget applies per non-streaming call, including union extraction. The first
-request always runs unless the context is canceled or the budget is invalid.
-A successful attempt is returned even if it crosses the budget. After a failed
-attempt, another retry is allowed only while cumulative usage is below the
-budget. `WithMaxRetries` and context cancellation/deadlines still apply independently.
-Leaving the budget unset preserves retry-count-only behavior; zero or negative
-budgets return an error before making a request.
+The budget resets for each call. It applies to regular and union requests, but
+not streaming.
 
-If usage is missing or incomplete, budgeting stops further retries rather than
-treating unknown usage as zero. Provider-reported totals take precedence over
-input/output sums; they are never added together. Anthropic totals also include
-separately reported cache creation/read tokens. For SDK usage fields that cannot
-distinguish missing counts from zero, a positive total or positive counts for both
-input and output are required. Cohere's explicit zero-valued counts are usable.
+The first request runs normally. You still receive a successful result if the
+total goes over budget. After a failed request, the client will not retry if
+reported usage has reached the budget or usage is missing or incomplete.
 
-When a budget prevents a retry, inspect `TokenBudgetError` with `errors.As`
-(`errors` is a standard-library import):
+Zero and negative budgets cause an error before any request. Without this
+option, retries work as before. Retry limits and context deadlines still apply.
+
+Use `errors.As` to inspect a `TokenBudgetError`. You can read the available
+usage and use `errors.Unwrap` to get the last parsing or validation error.
+Import the standard `errors` package for this example:
 
 ```go
 var budgetErr *instructor.TokenBudgetError
@@ -223,12 +219,7 @@ if errors.As(err, &budgetErr) {
 }
 ```
 
-The error exposes all available normalized usage and unwraps the last decoding
-or validation error. The provider response also retains available usage in its
-native fields. If the retry count is already exhausted, the existing retry-limit
-error is returned instead of a budget error. Streaming has no validation-retry
-loop and is not capped by this option.
-
+If no retries remain, you receive the usual retry limit error instead.
 
 ### Debug mode for troubleshooting
 
